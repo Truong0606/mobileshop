@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:smart_shopping_chatbot/core/network/api_client.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/models/login_request.dart';
@@ -40,13 +42,39 @@ class AuthState {
   }
 }
 
-/// Manages authentication state with real API calls.
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier({AuthRepository? repository})
+  AuthNotifier({AuthRepository? repository, FlutterSecureStorage? storage})
     : _repository = repository ?? AuthRepository(),
-      super(const AuthState());
+      _storage = storage ?? const FlutterSecureStorage(),
+      super(const AuthState()) {
+    _loadToken();
+  }
 
   final AuthRepository _repository;
+  final FlutterSecureStorage _storage;
+
+  static const String _tokenKey = 'auth_token';
+  static const String _emailKey = 'auth_email';
+
+  Future<void> _loadToken() async {
+    try {
+      final token = await _storage.read(key: _tokenKey);
+      final email = await _storage.read(key: _emailKey);
+      if (token != null && token.isNotEmpty) {
+        ApiClient.instance.setAuthToken(token);
+        final user = User(
+          id: 'user_restored',
+          name: _nameFromEmail(email ?? 'User'),
+          email: email ?? '',
+          avatarUrl: null,
+          createdAt: DateTime.now(),
+        );
+        state = AuthState(user: user, token: token);
+      }
+    } catch (e) {
+      // Ignore secure storage read errors
+    }
+  }
 
   /// Login via `POST /api/v1/auth/login`.
   ///
@@ -62,6 +90,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Store the token for subsequent authenticated requests
       ApiClient.instance.setAuthToken(response.accessToken);
+
+      await _storage.write(key: _tokenKey, value: response.accessToken);
+      await _storage.write(key: _emailKey, value: response.email ?? email);
 
       // Build user from response or from the email
       final user = User(
@@ -107,8 +138,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Log out and clear all auth data.
-  void logout() {
+  Future<void> logout() async {
     ApiClient.instance.clearAuthToken();
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _emailKey);
     state = const AuthState();
   }
 

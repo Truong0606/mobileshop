@@ -3,12 +3,24 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:smart_shopping_chatbot/core/network/api_client.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/repositories/chat_repository.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
+import 'package:uuid/uuid.dart';
 
 part 'chat_provider.g.dart';
 
 @riverpod
 ChatRepository chatRepository(Ref ref) {
   return ChatRepository(ApiClient.instance);
+}
+
+@riverpod
+String chatCustomerId(Ref ref) {
+  final auth = ref.watch(authProvider);
+  if (auth.accountId != null && auth.accountId!.isNotEmpty) {
+    return auth.accountId!;
+  }
+  // Generate a guest UUID if not logged in
+  return 'guest_${const Uuid().v4()}';
 }
 
 @riverpod
@@ -20,7 +32,7 @@ class ConversationList extends _$ConversationList {
 
   Future<List<ConversationModel>> _fetchConversations() async {
     final repo = ref.read(chatRepositoryProvider);
-    const customerId = "demo-customer-123";
+    final customerId = ref.read(chatCustomerIdProvider);
 
     final res = await repo.getConversations(customerId, pageSize: 50);
     final items = res.items;
@@ -41,7 +53,7 @@ class ChatMessages extends _$ChatMessages {
     if (conversationId == 'new') return [];
 
     final repo = ref.read(chatRepositoryProvider);
-    const customerId = "demo-customer-123";
+    final customerId = ref.read(chatCustomerIdProvider);
 
     final res = await repo.getMessages(conversationId, customerId);
 
@@ -69,7 +81,7 @@ class ChatMessages extends _$ChatMessages {
 
     try {
       final repo = ref.read(chatRepositoryProvider);
-      const customerId = "demo-customer-123";
+      final customerId = ref.read(chatCustomerIdProvider);
 
       final res = await repo.getMessages(
         conversationId,
@@ -92,7 +104,7 @@ class ChatMessages extends _$ChatMessages {
 
   Future<void> sendMessage(String text) async {
     final repo = ref.read(chatRepositoryProvider);
-    const customerId = "demo-customer-123";
+    final customerId = ref.read(chatCustomerIdProvider);
 
     final tempMsg = ChatMessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),

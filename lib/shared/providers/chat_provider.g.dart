@@ -23,7 +23,24 @@ final chatRepositoryProvider = AutoDisposeProvider<ChatRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ChatRepositoryRef = AutoDisposeProviderRef<ChatRepository>;
-String _$conversationListHash() => r'3271b45d8015aab5f36573e549e6e1d97bbd1ef4';
+String _$chatCustomerIdHash() => r'b40808774f9cd47926ec7bfbf68e284b5787c5b8';
+
+/// See also [chatCustomerId].
+@ProviderFor(chatCustomerId)
+final chatCustomerIdProvider = AutoDisposeProvider<String>.internal(
+  chatCustomerId,
+  name: r'chatCustomerIdProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$chatCustomerIdHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ChatCustomerIdRef = AutoDisposeProviderRef<String>;
+String _$conversationListHash() => r'f197b20726d6677ed544bddaed929eca5785ef9d';
 
 /// See also [ConversationList].
 @ProviderFor(ConversationList)
@@ -42,7 +59,7 @@ final conversationListProvider =
     );
 
 typedef _$ConversationList = AutoDisposeAsyncNotifier<List<ConversationModel>>;
-String _$chatMessagesHash() => r'52925b815c9070b0565dbfde3ec10e046e9e4142';
+String _$chatMessagesHash() => r'8cc2384fd7bd39f4e92dfb7eae98628a6eccec05';
 
 /// Copied from Dart SDK
 class _SystemHash {
