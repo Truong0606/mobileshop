@@ -28,7 +28,9 @@ class ChatRepository {
       );
       return ConversationModel.fromJson(response.data['data'] ?? response.data);
     } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Failed to start conversation');
+      throw ServerException(
+        message: e.message ?? 'Failed to start conversation',
+      );
     }
   }
 
@@ -102,7 +104,9 @@ class ChatRepository {
       final json = response.data['data'] ?? response.data;
       return ConversationListResponse.fromJson(json);
     } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Failed to list conversations');
+      throw ServerException(
+        message: e.message ?? 'Failed to list conversations',
+      );
     }
   }
 }

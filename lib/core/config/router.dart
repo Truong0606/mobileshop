@@ -12,6 +12,7 @@ import 'package:smart_shopping_chatbot/features/products/presentation/screens/pr
 import 'package:smart_shopping_chatbot/features/products/presentation/screens/compare_screen.dart';
 import 'package:smart_shopping_chatbot/features/auth/presentation/screens/login_screen.dart';
 import 'package:smart_shopping_chatbot/features/auth/presentation/screens/register_screen.dart';
+import 'package:smart_shopping_chatbot/features/cart/presentation/screens/cart_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Navigation keys — used to preserve navigator state per branch.
@@ -132,6 +133,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'register',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
+      ),
+
+      GoRoute(
+        path: '/cart',
+        name: 'cart',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CartScreen(),
       ),
     ],
 

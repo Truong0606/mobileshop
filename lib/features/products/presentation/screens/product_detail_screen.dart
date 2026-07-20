@@ -1,24 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
+import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({super.key, required this.productId});
 
   final String productId;
 
   @override
+  ConsumerState<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  VariantModel? _selectedVariant;
+
+  @override
   Widget build(BuildContext context) {
+    final productIdInt = int.tryParse(widget.productId) ?? 0;
+    final detailState = ref.watch(productDetailProvider(productIdInt));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (detailState.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (detailState.errorMessage != null || detailState.product == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Text(detailState.errorMessage ?? 'Không tìm thấy sản phẩm'),
+        ),
+      );
+    }
+
+    final product = detailState.product!;
+    final variants = detailState.variants;
+
+    // Auto-select first variant if none selected
+    if (_selectedVariant == null && variants.isNotEmpty) {
+      // Defer state update to avoid build-phase modifications
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedVariant = variants.first);
+      });
+    }
+
+    final displayPrice = _selectedVariant?.price ?? 0.0;
+    final displayStock = _selectedVariant?.stockQuantity ?? 0;
+    final displaySku = _selectedVariant?.sku ?? '';
+
+    // Fetch images from provider
+    final imageMap = ref.watch(imageMapProvider);
+    final images = _selectedVariant != null
+        ? imageMap.getVariantImages(_selectedVariant!.id)
+        : imageMap.getProductImages(product.id);
+
+    final displayImageUrl = images.isNotEmpty
+        ? images.first
+        : 'https://via.placeholder.com/400?text=No+Image';
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           // ── Image Header ──
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 350,
             pinned: true,
             leading: _circleButton(
               context,
@@ -33,22 +86,18 @@ class ProductDetailScreen extends StatelessWidget {
                 () {},
                 isDark,
               ),
-              const SizedBox(width: 8),
-              _circleButton(context, Icons.share_outlined, () {}, isDark),
               const SizedBox(width: 12),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkSurfaceContainer
-                      : AppColors.lightSurfaceVariant,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.phone_iphone_rounded,
-                    size: 100,
-                    color: AppColors.primary.withValues(alpha: 0.4),
+                color: isDark
+                    ? AppColors.darkSurfaceContainer
+                    : AppColors.lightSurfaceVariant,
+                child: Image.network(
+                  displayImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.image_not_supported, size: 60),
                   ),
                 ),
               ),
@@ -61,7 +110,7 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Brand & Rating ──
+                  // ── Brand & Category ──
                   Row(
                     children: [
                       Container(
@@ -74,7 +123,7 @@ class ProductDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'Apple',
+                          product.brand.isNotEmpty ? product.brand : 'No Brand',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -83,24 +132,8 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Color(0xFFFFD700),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 4),
                       Text(
-                        '4.8',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? AppColors.darkOnSurface
-                              : AppColors.lightOnSurface,
-                        ),
-                      ),
-                      Text(
-                        ' (256 reviews)',
+                        product.categoryName,
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: isDark
@@ -114,7 +147,7 @@ class ProductDetailScreen extends StatelessWidget {
 
                   // ── Name ──
                   Text(
-                    'iPhone 15 Pro Max 256GB',
+                    product.name,
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -126,69 +159,48 @@ class ProductDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // ── Price ──
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '28.990.000₫',
-                        style: GoogleFonts.inter(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '31.990.000₫',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          decoration: TextDecoration.lineThrough,
-                          color: isDark
-                              ? AppColors.darkOnSurfaceVariant
-                              : AppColors.lightOnSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '-9%',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    PriceFormatter.format(displayPrice),
+                    style: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
                   ),
                   const SizedBox(height: 8),
 
-                  // ── Stock ──
+                  // ── Stock & SKU ──
                   Row(
                     children: [
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.success,
+                        decoration: BoxDecoration(
+                          color: displayStock > 0
+                              ? AppColors.success
+                              : AppColors.error,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'In Stock • 15 units available',
+                        displayStock > 0
+                            ? 'Còn $displayStock sản phẩm'
+                            : 'Hết hàng',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.success,
+                          color: displayStock > 0
+                              ? AppColors.success
+                              : AppColors.error,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'SKU: $displaySku',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -196,18 +208,62 @@ class ProductDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // ── Specs ──
-                  _sectionLabel('Specifications', isDark),
-                  const SizedBox(height: 12),
-                  _specTable(isDark),
-
-                  const SizedBox(height: 24),
+                  // ── Variants Selection ──
+                  if (variants.isNotEmpty) ...[
+                    _sectionLabel('Chọn biến thể', isDark),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: variants.map((variant) {
+                        final isSelected = _selectedVariant?.id == variant.id;
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedVariant = variant),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark
+                                          ? Colors.grey[800]!
+                                          : Colors.grey[300]!),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              variant.variantName,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark ? Colors.white : Colors.black),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // ── Description ──
-                  _sectionLabel('Description', isDark),
+                  _sectionLabel('Mô tả sản phẩm', isDark),
                   const SizedBox(height: 8),
                   Text(
-                    'iPhone 15 Pro Max features a titanium design, the A17 Pro chip for extraordinary performance, a customizable Action button, and the most powerful camera system ever on an iPhone. With a 6.7-inch Super Retina XDR display, up to 29 hours of video playback, and USB-C connectivity.',
+                    product.description.isNotEmpty
+                        ? product.description
+                        : 'Chưa có mô tả',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       height: 1.6,
@@ -216,6 +272,68 @@ class ProductDetailScreen extends StatelessWidget {
                           : AppColors.lightOnSurface,
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Feedbacks ──
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _sectionLabel(
+                        'Đánh giá (${detailState.feedbacks.length})',
+                        isDark,
+                      ),
+                      TextButton(
+                        onFeedbackTap,
+                        child: const Text('Viết đánh giá'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (detailState.feedbacks.isEmpty)
+                    Text(
+                      'Chưa có đánh giá nào.',
+                      style: TextStyle(color: Colors.grey),
+                    )
+                  else
+                    ...detailState.feedbacks
+                        .take(3)
+                        .map(
+                          (fb) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      fb.accountName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Row(
+                                      children: List.generate(
+                                        5,
+                                        (index) => Icon(
+                                          index < fb.rating
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          size: 14,
+                                          color: Colors.amber,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(fb.comment),
+                                Divider(),
+                              ],
+                            ),
+                          ),
+                        ),
 
                   const SizedBox(height: 24),
 
@@ -256,7 +374,7 @@ class ProductDetailScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Ask AI about this product',
+                                  'Hỏi AI về sản phẩm này',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -266,7 +384,7 @@ class ProductDetailScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'Compare, ask questions, get recommendations',
+                                  'So sánh, đặt câu hỏi, nhận tư vấn',
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: isDark
@@ -313,41 +431,51 @@ class ProductDetailScreen extends StatelessWidget {
         child: Row(
           children: [
             // Cart icon
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primary),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.shopping_cart_outlined,
-                color: AppColors.primary,
-                size: 22,
+            GestureDetector(
+              onTap: () => context.push('/cart'),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primary),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.shopping_cart_outlined,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
               ),
             ),
             const SizedBox(width: 12),
             // Buy now
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              child: GestureDetector(
+                onTap: _selectedVariant == null ? null : _addToCart,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    gradient: _selectedVariant == null
+                        ? LinearGradient(colors: [Colors.grey, Colors.grey])
+                        : AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: _selectedVariant == null
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: Text(
+                    'Thêm vào giỏ',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
-                  ],
-                ),
-                child: Text(
-                  'Add to Cart',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
                   ),
                 ),
               ),
@@ -356,6 +484,134 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void onFeedbackTap() {
+    final accountId = "dummy_account_id"; // In real app, get from auth provider
+    int rating = 5;
+    final commentController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Đánh giá sản phẩm',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          setModalState(() => rating = index + 1);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập đánh giá của bạn...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final notifier = ref.read(
+                            productDetailProvider(
+                              int.parse(widget.productId),
+                            ).notifier,
+                          );
+                          await notifier.submitFeedback(
+                            accountId: accountId,
+                            rating: rating,
+                            comment: commentController.text,
+                          );
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã gửi đánh giá')),
+                            );
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Lỗi gửi đánh giá: $e')),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      child: const Text(
+                        'Gửi',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _addToCart() async {
+    if (_selectedVariant != null) {
+      try {
+        await ref
+            .read(cartProvider.notifier)
+            .addToCart(_selectedVariant!.id, 1);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã thêm ${_selectedVariant!.variantName} vào giỏ'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi thêm vào giỏ: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Widget _circleButton(
@@ -396,65 +652,6 @@ class ProductDetailScreen extends StatelessWidget {
         color: isDark
             ? AppColors.darkOnBackground
             : AppColors.lightOnBackground,
-      ),
-    );
-  }
-
-  Widget _specTable(bool isDark) {
-    final specs = {
-      'Display': '6.7" Super Retina XDR',
-      'Chip': 'A17 Pro',
-      'Camera': '48MP Main + 12MP Ultra Wide',
-      'Battery': 'Up to 29h video playback',
-      'Storage': '256GB',
-      'OS': 'iOS 17',
-      'Weight': '221g',
-      'Connectivity': '5G, Wi-Fi 6E, USB-C',
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceVariant
-            : AppColors.lightSurfaceVariant,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: specs.entries.map((e) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 110,
-                  child: Text(
-                    e.key,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? AppColors.darkOnSurfaceVariant
-                          : AppColors.lightOnSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    e.value,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.darkOnSurface
-                          : AppColors.lightOnSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
       ),
     );
   }

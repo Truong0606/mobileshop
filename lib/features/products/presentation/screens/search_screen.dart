@@ -1,105 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
+import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
+import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchController = TextEditingController();
   String _selectedCategory = 'All';
-  RangeValues _priceRange = const RangeValues(0, 50000000);
+  RangeValues _priceRange = const RangeValues(
+    0,
+    5000000,
+  ); // Set max to 5 million for clothing
   bool _showFilters = false;
 
-  final _categories = [
-    'All',
-    'Phones',
-    'Laptops',
-    'Audio',
-    'Watches',
-    'Cameras',
-  ];
-
-  final _products = [
-    _SearchProduct(
-      'iPhone 15 Pro',
-      'Apple',
-      28990000,
-      Icons.phone_iphone_rounded,
-      4.8,
-      256,
-      true,
-    ),
-    _SearchProduct(
-      'Galaxy S24 Ultra',
-      'Samsung',
-      25990000,
-      Icons.phone_android_rounded,
-      4.7,
-      189,
-      true,
-    ),
-    _SearchProduct(
-      'MacBook Air M3',
-      'Apple',
-      27490000,
-      Icons.laptop_mac_rounded,
-      4.9,
-      312,
-      true,
-    ),
-    _SearchProduct(
-      'AirPods Pro 2',
-      'Apple',
-      5490000,
-      Icons.headphones_rounded,
-      4.6,
-      543,
-      true,
-    ),
-    _SearchProduct(
-      'Sony WH-1000XM5',
-      'Sony',
-      6990000,
-      Icons.headset_rounded,
-      4.8,
-      421,
-      true,
-    ),
-    _SearchProduct(
-      'iPad Air M2',
-      'Apple',
-      16990000,
-      Icons.tablet_mac_rounded,
-      4.7,
-      178,
-      true,
-    ),
-    _SearchProduct(
-      'Galaxy Watch 6',
-      'Samsung',
-      6490000,
-      Icons.watch_rounded,
-      4.4,
-      134,
-      false,
-    ),
-    _SearchProduct(
-      'Sony A7 IV',
-      'Sony',
-      42990000,
-      Icons.camera_alt_rounded,
-      4.9,
-      89,
-      true,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Load products and images when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(productListProvider.notifier).fetchProducts(pageSize: 50);
+      ref.read(imageMapProvider.notifier).fetchAllImages();
+    });
+  }
 
   @override
   void dispose() {
@@ -110,6 +42,28 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final productState = ref.watch(productListProvider);
+    final imageMap = ref.watch(imageMapProvider);
+
+    // Extract unique categories from products
+    final categories = ['All'];
+    for (final p in productState.products) {
+      if (!categories.contains(p.categoryName)) {
+        categories.add(p.categoryName);
+      }
+    }
+
+    // Filter products
+    final searchQuery = _searchController.text.toLowerCase();
+    final filteredProducts = productState.products.where((p) {
+      final matchesSearch =
+          p.name.toLowerCase().contains(searchQuery) ||
+          p.brand.toLowerCase().contains(searchQuery);
+      final matchesCategory =
+          _selectedCategory == 'All' || p.categoryName == _selectedCategory;
+      // We don't have direct price on ProductModel (it's on Variant), so price filtering is rough
+      return matchesSearch && matchesCategory;
+    }).toList();
 
     return Scaffold(
       body: SafeArea(
@@ -119,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Text(
-                'Search',
+                'Tìm kiếm',
                 style: GoogleFonts.inter(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
@@ -140,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       controller: _searchController,
                       style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Search products, brands...',
+                        hintText: 'Tên sản phẩm, thương hiệu...',
                         prefixIcon: const Icon(Icons.search_rounded, size: 20),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
@@ -188,10 +142,10 @@ class _SearchScreenState extends State<SearchScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
+                itemCount: categories.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
-                  final cat = _categories[index];
+                  final cat = categories[index];
                   final selected = cat == _selectedCategory;
                   return ChoiceChip(
                     label: Text(cat),
@@ -215,20 +169,36 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // ── Results ──
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: _products.length,
-                itemBuilder: (context, index) {
-                  final p = _products[index];
-                  return _buildProductTile(context, p, isDark, index);
-                },
-              ),
+              child: productState.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : productState.errorMessage != null
+                  ? Center(child: Text(productState.errorMessage!))
+                  : filteredProducts.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Không tìm thấy sản phẩm nào.',
+                        style: GoogleFonts.inter(color: Colors.grey),
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.75,
+                          ),
+                      itemCount: filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        final p = filteredProducts[index];
+                        final thumbnail = imageMap.getProductThumbnail(p.id);
+                        return _buildProductTile(context, p, thumbnail, isDark);
+                      },
+                    ),
             ),
           ],
         ),
@@ -244,18 +214,18 @@ class _SearchScreenState extends State<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Price Range',
+            'Khoảng giá',
             style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
           ),
           RangeSlider(
             values: _priceRange,
             min: 0,
-            max: 50000000,
+            max: 5000000,
             divisions: 50,
             activeColor: AppColors.primary,
             labels: RangeLabels(
-              _formatVND(_priceRange.start),
-              _formatVND(_priceRange.end),
+              PriceFormatter.format(_priceRange.start),
+              PriceFormatter.format(_priceRange.end),
             ),
             onChanged: (v) => setState(() => _priceRange = v),
           ),
@@ -263,14 +233,14 @@ class _SearchScreenState extends State<SearchScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _formatVND(_priceRange.start),
+                PriceFormatter.format(_priceRange.start),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.primary,
                 ),
               ),
               Text(
-                _formatVND(_priceRange.end),
+                PriceFormatter.format(_priceRange.end),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.primary,
@@ -285,12 +255,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildProductTile(
     BuildContext context,
-    _SearchProduct p,
+    dynamic p,
+    String? thumbnail,
     bool isDark,
-    int index,
   ) {
     return GestureDetector(
-      onTap: () => context.push('/product/$index'),
+      onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
@@ -315,38 +285,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     top: Radius.circular(16),
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Icon(
-                        p.icon,
-                        size: 44,
-                        color: AppColors.primary.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    if (!p.inStock)
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Out of Stock',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                child: thumbnail != null
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
                         ),
-                      ),
-                  ],
-                ),
+                        child: Image.network(
+                          thumbnail,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        ),
+                      )
+                    : _buildPlaceholder(),
               ),
             ),
             Expanded(
@@ -357,7 +307,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      p.brand,
+                      p.brand.isNotEmpty ? p.brand : p.categoryName,
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -367,7 +317,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     const SizedBox(height: 2),
                     Text(
                       p.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 13,
@@ -375,35 +325,6 @@ class _SearchScreenState extends State<SearchScreen> {
                         color: isDark
                             ? AppColors.darkOnSurface
                             : AppColors.lightOnSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Color(0xFFFFD700),
-                          size: 13,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${p.rating} (${p.reviews})',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            color: isDark
-                                ? AppColors.darkOnSurfaceVariant
-                                : AppColors.lightOnSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatVND(p.price.toDouble()),
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -416,32 +337,13 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _formatVND(double price) {
-    final str = price.toInt().toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(str[i]);
-    }
-    buffer.write('₫');
-    return buffer.toString();
+  Widget _buildPlaceholder() {
+    return Center(
+      child: Icon(
+        Icons.shopping_bag_outlined,
+        size: 44,
+        color: AppColors.primary.withValues(alpha: 0.6),
+      ),
+    );
   }
-}
-
-class _SearchProduct {
-  final String name, brand;
-  final int price;
-  final IconData icon;
-  final double rating;
-  final int reviews;
-  final bool inStock;
-  const _SearchProduct(
-    this.name,
-    this.brand,
-    this.price,
-    this.icon,
-    this.rating,
-    this.reviews,
-    this.inStock,
-  );
 }

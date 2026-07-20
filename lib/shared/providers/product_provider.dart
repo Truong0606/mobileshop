@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/feedback_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/repositories/product_repository.dart';
+import 'package:smart_shopping_chatbot/features/products/data/repositories/feedback_repository.dart';
 
 /// State for the product list.
 class ProductListState {
@@ -295,3 +297,121 @@ class ImageMapNotifier extends StateNotifier<ImageMapState> {
 final imageMapProvider = StateNotifierProvider<ImageMapNotifier, ImageMapState>(
   (ref) => ImageMapNotifier(),
 );
+
+// ═══════════════════════════════════════════
+// Product Detail Provider
+// ═══════════════════════════════════════════
+
+class ProductDetailState {
+  final ProductModel? product;
+  final List<VariantModel> variants;
+  final List<FeedbackModel> feedbacks;
+  final bool isLoading;
+  final String? errorMessage;
+
+  const ProductDetailState({
+    this.product,
+    this.variants = const [],
+    this.feedbacks = const [],
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  ProductDetailState copyWith({
+    ProductModel? product,
+    List<VariantModel>? variants,
+    List<FeedbackModel>? feedbacks,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return ProductDetailState(
+      product: product ?? this.product,
+      variants: variants ?? this.variants,
+      feedbacks: feedbacks ?? this.feedbacks,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+class ProductDetailNotifier extends StateNotifier<ProductDetailState> {
+  final int productId;
+  final ProductRepository _productRepository;
+  final FeedbackRepository _feedbackRepository;
+
+  ProductDetailNotifier(
+    this.productId, {
+    ProductRepository? productRepository,
+    FeedbackRepository? feedbackRepository,
+  }) : _productRepository = productRepository ?? ProductRepository(),
+       _feedbackRepository = feedbackRepository ?? FeedbackRepository(),
+       super(const ProductDetailState()) {
+    fetchDetail();
+  }
+
+  Future<void> fetchDetail() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final product = await _productRepository.getProductById(productId);
+
+      // Fetch all variants (in a real app, you might filter by productId or backend would include them)
+      // Since our API currently paginates all variants, let's fetch all and filter locally for now.
+      final allVariantsResponse = await _productRepository.getVariants(
+        pageSize: 100,
+      );
+      final productVariants = allVariantsResponse.items
+          .where((v) => v.productId == productId)
+          .toList();
+
+      List<FeedbackModel> feedbacks = [];
+      try {
+        final feedbackResponse = await _feedbackRepository.getProductFeedbacks(
+          productId,
+        );
+        feedbacks = feedbackResponse.items;
+      } catch (e) {
+        // Feedback might fail if not implemented on backend, ignore for now
+        print('Error fetching feedbacks: $e');
+      }
+
+      state = state.copyWith(
+        product: product,
+        variants: productVariants,
+        feedbacks: feedbacks,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Lỗi tải chi tiết: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<void> submitFeedback({
+    required String accountId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      await _feedbackRepository.submitFeedback(
+        accountId: accountId,
+        productId: productId,
+        rating: rating,
+        comment: comment,
+      );
+      // Refresh feedbacks
+      fetchDetail();
+    } catch (e) {
+      rethrow;
+    }
+  }
+}
+
+final productDetailProvider =
+    StateNotifierProvider.family<
+      ProductDetailNotifier,
+      ProductDetailState,
+      int
+    >((ref, productId) => ProductDetailNotifier(productId));
