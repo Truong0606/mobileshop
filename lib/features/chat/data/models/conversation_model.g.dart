@@ -68,19 +68,6 @@ MessageListResponse _$MessageListResponseFromJson(Map<String, dynamic> json) =>
       nextCursor: json['nextCursor'] as String?,
     );
 
-Map<String, dynamic> _$MessageListResponseToJson(
-  MessageListResponse instance,
-) => <String, dynamic>{
-  'items': instance.items,
-  'nextCursor': instance.nextCursor,
-};
-
-SendMessageCommand _$SendMessageCommandFromJson(Map<String, dynamic> json) =>
-    SendMessageCommand(
-      message: json['message'] as String,
-      externalCustomerId: json['externalCustomerId'] as String,
-    );
-
 Map<String, dynamic> _$SendMessageCommandToJson(SendMessageCommand instance) =>
     <String, dynamic>{
       'message': instance.message,

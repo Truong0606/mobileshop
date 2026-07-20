@@ -75,7 +75,7 @@ class ChatRepository {
       final queryParams = {
         'externalCustomerId': externalCustomerId,
         'limit': limit,
-        ?'lastCursor': lastCursor,
+        if (lastCursor != null) 'lastCursor': lastCursor,
       };
 
       final response = await _dio.get(

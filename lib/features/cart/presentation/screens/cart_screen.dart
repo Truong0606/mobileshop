@@ -120,7 +120,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              PriceFormatter.formatVND(item.price),
+                              PriceFormatter.formatVNDDouble(item.price),
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary,
@@ -210,7 +210,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                           style: GoogleFonts.inter(color: Colors.grey),
                         ),
                         Text(
-                          PriceFormatter.formatVND(cartState.totalPrice),
+                          PriceFormatter.formatVNDDouble(cartState.totalPrice),
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

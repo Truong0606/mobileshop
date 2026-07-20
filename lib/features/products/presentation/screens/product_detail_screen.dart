@@ -160,7 +160,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                   // ── Price ──
                   Text(
-                    PriceFormatter.formatVND(displayPrice),
+                    PriceFormatter.formatVNDDouble(displayPrice),
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,

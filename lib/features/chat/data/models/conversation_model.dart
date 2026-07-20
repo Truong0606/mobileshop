@@ -68,7 +68,7 @@ class ConversationListResponse {
       _$ConversationListResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class MessageListResponse {
   final List<ChatMessageModel> items;
   final String? nextCursor;
@@ -79,7 +79,7 @@ class MessageListResponse {
       _$MessageListResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createFactory: false)
 class SendMessageCommand {
   final String message;
   final String externalCustomerId;
