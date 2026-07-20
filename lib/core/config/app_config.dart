@@ -92,22 +92,18 @@ class AppConfig {
   static String _fallbackApiUrl(Environment env) {
     switch (env) {
       case Environment.dev:
-        return 'http://localhost:8000/api/v1';
       case Environment.staging:
-        return 'https://staging-api.smartshopping.example.com/api/v1';
       case Environment.prod:
-        return 'https://api.smartshopping.example.com/api/v1';
+        return 'https://shoppe-fake-427087851138.asia-southeast1.run.app/api/v1';
     }
   }
 
   static String _fallbackWsUrl(Environment env) {
     switch (env) {
       case Environment.dev:
-        return 'ws://localhost:8000/ws';
       case Environment.staging:
-        return 'wss://staging-ws.smartshopping.example.com/ws';
       case Environment.prod:
-        return 'wss://ws.smartshopping.example.com/ws';
+        return 'wss://shoppe-fake-427087851138.asia-southeast1.run.app/ws';
     }
   }
 
