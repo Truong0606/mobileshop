@@ -11,6 +11,7 @@ class AppConfig {
   const AppConfig._({
     required this.environment,
     required this.apiBaseUrl,
+    required this.chatbotApiBaseUrl,
     required this.wsUrl,
     required this.chatbotApiKey,
     this.enableLogging = false,
@@ -39,7 +40,7 @@ class AppConfig {
 
   /// Initialise the global configuration from `.env` values.
   ///
-  /// Reads `API_BASE_URL`, `WS_URL`, and `APP_ENV` from the loaded dotenv.
+  /// Reads `API_BASE_URL`, `CHATBOT_API_BASE_URL`, `WS_URL`, and `APP_ENV` from the loaded dotenv.
   static void init() {
     final envStr = dotenv.env['APP_ENV'] ?? 'dev';
     final environment = Environment.values.firstWhere(
@@ -49,12 +50,15 @@ class AppConfig {
 
     final apiBaseUrl =
         dotenv.env['API_BASE_URL'] ?? _fallbackApiUrl(environment);
+    final chatbotApiBaseUrl =
+        dotenv.env['CHATBOT_API_BASE_URL'] ?? 'https://mahihi.com/api/v1';
     final wsUrl = dotenv.env['WS_URL'] ?? _fallbackWsUrl(environment);
     final chatbotApiKey = dotenv.env['CHATBOT_API_KEY'] ?? '';
 
     _instance = AppConfig._(
       environment: environment,
       apiBaseUrl: apiBaseUrl,
+      chatbotApiBaseUrl: chatbotApiBaseUrl,
       wsUrl: wsUrl,
       chatbotApiKey: chatbotApiKey,
       enableLogging: environment != Environment.prod,
@@ -73,6 +77,7 @@ class AppConfig {
   // ──────────────────────────────────────────────
   final Environment environment;
   final String apiBaseUrl;
+  final String chatbotApiBaseUrl;
   final String wsUrl;
   final String chatbotApiKey;
   final bool enableLogging;

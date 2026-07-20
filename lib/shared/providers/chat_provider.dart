@@ -10,7 +10,7 @@ part 'chat_provider.g.dart';
 
 @riverpod
 ChatRepository chatRepository(Ref ref) {
-  return ChatRepository(ApiClient.instance);
+  return ChatRepository();
 }
 
 @riverpod
