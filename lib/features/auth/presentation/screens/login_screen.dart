@@ -14,8 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController(text: 'truong@gmail.com');
-  final _passwordController = TextEditingController(text: '123456');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscure = true;
 
   @override
@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (mounted) {
       if (success) {
-        context.go('/profile');
+        context.goNamed('profile');
       } else {
         final error = ref.read(authProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -109,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               style: GoogleFonts.inter(fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Email / Số điện thoại',
+                hintText: 'Email',
                 prefixIcon: Icon(
                   Icons.email_outlined,
                   size: 20,
@@ -290,7 +290,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 GestureDetector(
                   onTap: () {
                     context.pop();
-                    context.push('/register');
+                    context.pushNamed('register');
                   },
                   child: Text(
                     'Đăng ký',

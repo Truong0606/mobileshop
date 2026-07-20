@@ -14,12 +14,8 @@ ChatRepository chatRepository(Ref ref) {
 
 @riverpod
 String chatCustomerId(Ref ref) {
-  final auth = ref.watch(authProvider);
-  if (auth.user != null && auth.user!.email.isNotEmpty) {
-    return auth.user!.email;
-  }
-  // Generate a guest UUID if not logged in
-  return 'guest_${const Uuid().v4()}';
+  // Tạm thời gán hardcode id của business owner để test
+  return '6a572ade7904e1b8e301a78b';
 }
 
 @riverpod
@@ -68,9 +64,11 @@ class ChatMessages extends _$ChatMessages {
   String? _lastCursor;
   bool _hasMore = false;
   bool _isLoadingMore = false;
+  bool _isTyping = false;
 
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
+  bool get isTyping => _isTyping;
 
   Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore || conversationId == 'new') return;
@@ -114,25 +112,65 @@ class ChatMessages extends _$ChatMessages {
     );
 
     state = AsyncData([...(state.value ?? []), tempMsg]);
+    
+    _isTyping = true;
+    state = AsyncData(state.value ?? []);
 
     try {
+      ConversationModel response;
       if (conversationId == 'new') {
-        await repo.startConversation(
+        response = await repo.startConversation(
           SendMessageCommand(message: text, externalCustomerId: customerId),
         );
         ref.read(conversationListProvider.notifier).refresh();
       } else {
-        final response = await repo.sendMessage(
+        response = await repo.sendMessage(
           conversationId,
           SendMessageCommand(message: text, externalCustomerId: customerId),
         );
-        if (response.messages != null) {
-          final sorted = List<ChatMessageModel>.from(response.messages!);
-          sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          state = AsyncData(sorted);
+      }
+
+      _isTyping = false;
+
+      if (response.messages != null && response.messages!.isNotEmpty) {
+        final lastMsg = response.messages!.last;
+        
+        // Cập nhật bằng cách lấy state hiện tại (đã chứa tin nhắn của user) và append thêm tin nhắn của bot
+        final currentMessages = state.value ?? [];
+
+        if (lastMsg.sender.toLowerCase() != 'user' && lastMsg.sender.toLowerCase() != 'customer') {
+          String currentText = '';
+          final words = lastMsg.content.split(' ');
+          
+          for (int i = 0; i < words.length; i++) {
+            currentText += (i == 0 ? '' : ' ') + words[i];
+            final streamingMsg = ChatMessageModel(
+              id: lastMsg.id,
+              conversationId: lastMsg.conversationId,
+              sender: lastMsg.sender,
+              content: currentText,
+              createdAt: lastMsg.createdAt,
+            );
+            
+            // Xóa đi các tin nhắn streaming trước đó của chính nó (nếu có) bằng cách lọc theo id
+            // Hoặc đơn giản là thêm trực tiếp nếu ta giả định id tin nhắn bot là duy nhất và luôn ở cuối
+            // Để an toàn, filter các tin nhắn không phải là streamingMsg hiện tại
+            final msgsWithoutCurrentStreaming = currentMessages.where((m) => m.id != lastMsg.id).toList();
+            
+            state = AsyncData([...msgsWithoutCurrentStreaming, streamingMsg]);
+            await Future.delayed(const Duration(milliseconds: 30));
+          }
+        } else {
+          // Trừ trường hợp fallback
+          state = AsyncData([...currentMessages, lastMsg]);
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      _isTyping = false;
+      state = AsyncData(state.value ?? []);
+      print('=== CHAT ERROR ===');
+      print(e);
+      print(st);
       // Revert optimistic message on error (ignored for demo simplicity)
     }
   }

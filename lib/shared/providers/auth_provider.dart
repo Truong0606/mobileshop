@@ -2,7 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:smart_shopping_chatbot/core/network/api_client.dart';
+import 'package:smart_shopping_chatbot/core/config/router.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/models/login_request.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/models/register_request.dart';
@@ -48,6 +52,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _storage = storage ?? const FlutterSecureStorage(),
       super(const AuthState()) {
     _loadToken();
+    ApiClient.instance.onUnauthorized = _handleUnauthorized;
   }
 
   final AuthRepository _repository;
@@ -55,6 +60,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   static const String _tokenKey = 'auth_token';
   static const String _emailKey = 'auth_email';
+
+  void _handleUnauthorized() {
+    logout();
+    final context = rootNavigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.')),
+      );
+      context.goNamed('login');
+    }
+  }
 
   Future<void> _loadToken() async {
     try {

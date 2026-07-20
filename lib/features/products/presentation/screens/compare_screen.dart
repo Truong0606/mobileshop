@@ -63,7 +63,7 @@ class CompareScreen extends StatelessWidget {
 
             // ── Ask AI button ──
             GestureDetector(
-              onTap: () => context.push('/chat/compare'),
+              onTap: () => context.pushNamed('chat', pathParameters: {'id': 'compare'}),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),

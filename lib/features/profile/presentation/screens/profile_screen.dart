@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
@@ -178,7 +179,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   _headerIcon(Icons.shopping_cart_outlined, () {}),
                   const SizedBox(width: 12),
-                  _headerIcon(Icons.chat_outlined, () => context.go('/chat')),
+                  _headerIcon(Icons.chat_outlined, () => context.goNamed('chatList')),
                 ],
               ),
               const SizedBox(height: 16),
@@ -236,7 +237,7 @@ class ProfileScreen extends ConsumerWidget {
         // Login button (outlined)
         Expanded(
           child: GestureDetector(
-            onTap: () => context.push('/login'),
+            onTap: () => context.pushNamed('login'),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
@@ -260,7 +261,7 @@ class ProfileScreen extends ConsumerWidget {
         // Register button (filled white)
         Expanded(
           child: GestureDetector(
-            onTap: () => context.push('/register'),
+            onTap: () => context.pushNamed('register'),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
@@ -306,7 +307,10 @@ class ProfileScreen extends ConsumerWidget {
           child: user.avatarUrl != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(user.avatarUrl!, fit: BoxFit.cover),
+                  child: CachedNetworkImage(
+                    imageUrl: user.avatarUrl!,
+                    fit: BoxFit.cover,
+                  ),
                 )
               : Center(
                   child: Text(

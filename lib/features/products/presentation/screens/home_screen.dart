@@ -184,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: GestureDetector(
-        onTap: () => context.go('/search'),
+        onTap: () => context.goNamed('search'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
@@ -254,8 +254,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: actions.map((action) {
           return GestureDetector(
             onTap: () {
-              if (action.label == 'AI Chat') context.go('/chat');
-              if (action.label == 'So sánh') context.push('/compare');
+              if (action.label == 'AI Chat') context.goNamed('chatList');
+              if (action.label == 'So sánh') context.pushNamed('compare');
             },
             child: Column(
               children: [
@@ -412,7 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }.toList();
 
     return GestureDetector(
-      onTap: () => context.push('/product/${variant.productId}'),
+      onTap: () => context.pushNamed('productDetail', pathParameters: {'id': variant.productId.toString()}),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
@@ -759,7 +759,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       child: FloatingActionButton.extended(
-        onPressed: () => context.go('/chat'),
+        onPressed: () => context.goNamed('chatList'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),

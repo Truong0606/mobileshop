@@ -17,7 +17,7 @@ import 'package:smart_shopping_chatbot/features/cart/presentation/screens/cart_s
 // ---------------------------------------------------------------------------
 // Navigation keys — used to preserve navigator state per branch.
 // ---------------------------------------------------------------------------
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
 final _chatNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'chat');
 final _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
@@ -30,7 +30,7 @@ final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 /// Riverpod provider that exposes the app's [GoRouter] instance.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/home',
     routes: [
       // ── Bottom-navigation shell (4 tabs) ──────────────────────────────
@@ -97,7 +97,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chat/:id',
         name: 'chat',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final chatId = state.pathParameters['id']!;
           return ChatScreen(chatId: chatId);
@@ -107,7 +107,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/product/:id',
         name: 'productDetail',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final productId = state.pathParameters['id']!;
           return ProductDetailScreen(productId: productId);
@@ -117,28 +117,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/compare',
         name: 'compare',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CompareScreen(),
       ),
 
       GoRoute(
         path: '/login',
         name: 'login',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const LoginScreen(),
       ),
 
       GoRoute(
         path: '/register',
         name: 'register',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
       ),
 
       GoRoute(
         path: '/cart',
         name: 'cart',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CartScreen(),
       ),
     ],

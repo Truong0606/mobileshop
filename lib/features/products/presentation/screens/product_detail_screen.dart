@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
@@ -93,10 +94,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 color: isDark
                     ? AppColors.darkSurfaceContainer
                     : AppColors.lightSurfaceVariant,
-                child: Image.network(
-                  displayImageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: displayImageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Center(
+                  errorWidget: (context, url, error) => const Center(
                     child: Icon(Icons.image_not_supported, size: 60),
                   ),
                 ),
@@ -340,7 +341,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   // ── Ask AI ──
                   GestureDetector(
                     onTap: () =>
-                        context.push('/chat/product-${widget.productId}'),
+                        context.pushNamed('chat', pathParameters: {'id': 'product-${widget.productId}'}),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -433,7 +434,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           children: [
             // Cart icon
             GestureDetector(
-              onTap: () => context.push('/cart'),
+              onTap: () => context.pushNamed('cart'),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(

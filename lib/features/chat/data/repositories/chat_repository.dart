@@ -38,7 +38,22 @@ class ChatRepository {
         '/chat/conversations/messages',
         data: command.toJson(),
       );
-      return ConversationModel.fromJson(response.data['data'] ?? response.data);
+      final data = response.data['data'] ?? response.data;
+      return ConversationModel(
+        id: data['conversationId'] ?? '',
+        title: data['conversationTitle'] ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messages: [
+          ChatMessageModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            conversationId: data['conversationId'] ?? '',
+            sender: 'Bot',
+            content: data['messageResponse'] ?? '',
+            createdAt: DateTime.now(),
+          )
+        ],
+      );
     } on DioException catch (e) {
       throw ServerException(
         message: e.message ?? 'Failed to start conversation',
@@ -57,7 +72,22 @@ class ChatRepository {
         '/chat/conversations/$conversationId/messages',
         data: command.toJson(),
       );
-      return ConversationModel.fromJson(response.data['data'] ?? response.data);
+      final data = response.data['data'] ?? response.data;
+      return ConversationModel(
+        id: data['conversationId'] ?? conversationId,
+        title: data['conversationTitle'] ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messages: [
+          ChatMessageModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            conversationId: data['conversationId'] ?? conversationId,
+            sender: 'Bot',
+            content: data['messageResponse'] ?? '',
+            createdAt: DateTime.now(),
+          )
+        ],
+      );
     } on DioException catch (e) {
       throw ServerException(message: e.message ?? 'Failed to send message');
     }
@@ -84,9 +114,18 @@ class ChatRepository {
         queryParameters: queryParams,
       );
 
-      // Usually API response is wrapped in 'data'
       final json = response.data['data'] ?? response.data;
-      return MessageListResponse.fromJson(json);
+      final itemsList = json['items'] as List? ?? [];
+      return MessageListResponse(
+        items: itemsList.map((e) => ChatMessageModel(
+          id: e['id'] ?? '',
+          conversationId: conversationId,
+          sender: e['senderType'] ?? 'User',
+          content: e['content'] ?? '',
+          createdAt: DateTime.tryParse(e['createdAt'] ?? '') ?? DateTime.now(),
+        )).toList(),
+        nextCursor: json['nextCursor'],
+      );
     } on DioException catch (e) {
       throw ServerException(message: e.message ?? 'Failed to get messages');
     }
@@ -112,8 +151,29 @@ class ChatRepository {
       );
 
       final json = response.data['data'] ?? response.data;
-      return ConversationListResponse.fromJson(json);
+      final itemsList = json['items'] as List? ?? [];
+      return ConversationListResponse(
+        items: itemsList.map((e) => ConversationModel(
+          id: e['id'] ?? '',
+          title: e['title'] ?? '',
+          createdAt: DateTime.tryParse(e['createAt'] ?? '') ?? DateTime.now(),
+          updatedAt: DateTime.tryParse(e['lastMessageAt'] ?? '') ?? DateTime.now(),
+        )).toList(),
+        pageIndex: json['pageIndex'] ?? pageIndex,
+        pageSize: json['pageSize'] ?? pageSize,
+        totalCount: json['totalItems'] ?? 0,
+        totalPages: json['totalPages'] ?? 0,
+      );
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return ConversationListResponse(
+          items: [],
+          pageIndex: pageIndex,
+          pageSize: pageSize,
+          totalCount: 0,
+          totalPages: 0,
+        );
+      }
       throw ServerException(
         message: e.message ?? 'Failed to list conversations',
       );

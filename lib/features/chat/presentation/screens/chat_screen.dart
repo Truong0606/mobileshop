@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
+import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/typing_indicator.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chatId});
@@ -82,7 +83,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  itemCount: messages.length + (notifier.isLoadingMore ? 1 : 0),
+                  itemCount: messages.length + (notifier.isLoadingMore ? 1 : 0) + (notifier.isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (notifier.isLoadingMore && index == 0) {
                       return const Center(
@@ -91,6 +92,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           child: CircularProgressIndicator(),
                         ),
                       );
+                    }
+
+                    final totalMsgCount = messages.length + (notifier.isLoadingMore ? 1 : 0);
+                    if (notifier.isTyping && index == totalMsgCount) {
+                      return TypingIndicator(isDark: isDark);
                     }
 
                     final msgIndex = notifier.isLoadingMore ? index - 1 : index;
@@ -161,7 +167,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ChatMessageModel message,
     bool isDark,
   ) {
-    final isUser = message.sender.toLowerCase() == 'user';
+    final senderLower = message.sender.toLowerCase();
+    final isUser = senderLower == 'user' || senderLower == 'customer';
 
     return Padding(
       padding: EdgeInsets.only(

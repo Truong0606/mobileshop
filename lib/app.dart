@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:smart_shopping_chatbot/l10n/app_localizations.dart';
+
 import 'package:smart_shopping_chatbot/core/config/router.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_theme.dart';
 import 'package:smart_shopping_chatbot/shared/providers/theme_provider.dart';
@@ -20,6 +23,16 @@ class App extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('vi'), // Tiếng Việt
+        Locale('en'), // Tiếng Anh
+      ],
     );
   }
 }

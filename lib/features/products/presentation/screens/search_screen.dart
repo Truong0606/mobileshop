@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
@@ -260,7 +261,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     bool isDark,
   ) {
     return GestureDetector(
-      onTap: () => context.push('/product/${p.id}'),
+      onTap: () => context.pushNamed('productDetail', pathParameters: {'id': p.id.toString()}),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
@@ -290,10 +291,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
-                        child: Image.network(
-                          thumbnail,
+                        child: CachedNetworkImage(
+                          imageUrl: thumbnail,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
+                          errorWidget: (context, url, error) =>
                               _buildPlaceholder(),
                         ),
                       )

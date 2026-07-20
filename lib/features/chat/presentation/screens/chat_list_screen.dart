@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -14,6 +15,78 @@ class ChatListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final authState = ref.watch(authProvider);
+    if (!authState.isLoggedIn) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 80,
+                    color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Vui lòng đăng nhập',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.darkOnBackground : AppColors.lightOnBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Bạn cần đăng nhập để xem lịch sử trò chuyện và bắt đầu hội thoại mới với AI.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  GestureDetector(
+                    onTap: () => context.pushNamed('login'),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Đăng Nhập Ngay',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final conversationsAsync = ref.watch(conversationListProvider);
 
     return Scaffold(
@@ -60,7 +133,7 @@ class ChatListScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GestureDetector(
-                onTap: () => context.push('/chat/new'),
+                onTap: () => context.pushNamed('chat', pathParameters: {'id': 'new'}),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -170,7 +243,7 @@ class ChatListScreen extends ConsumerWidget {
     bool isDark,
   ) {
     return GestureDetector(
-      onTap: () => context.push('/chat/${conv.id}'),
+      onTap: () => context.pushNamed('chat', pathParameters: {'id': conv.id.toString()}),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(

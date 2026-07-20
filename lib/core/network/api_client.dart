@@ -38,6 +38,9 @@ class ApiClient {
   void setAuthToken(String token) => _authToken = token;
   void clearAuthToken() => _authToken = null;
 
+  /// Callback fired when a 401 Unauthorized response is received.
+  void Function()? onUnauthorized;
+
   // ───────── Interceptors ─────────
 
   Interceptor _authInterceptor() {
@@ -47,6 +50,12 @@ class ApiClient {
           options.headers['Authorization'] = 'Bearer $_authToken';
         }
         handler.next(options);
+      },
+      onError: (DioException e, handler) {
+        if (e.response?.statusCode == 401) {
+          onUnauthorized?.call();
+        }
+        handler.next(e);
       },
     );
   }

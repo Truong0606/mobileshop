@@ -45,7 +45,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (mounted) {
       if (success) {
-        context.go('/profile');
+        context.goNamed('profile');
       } else {
         final error = ref.read(authProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +133,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               keyboardType: TextInputType.emailAddress,
               style: GoogleFonts.inter(fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Email / Số điện thoại',
+                hintText: 'Email',
                 prefixIcon: Icon(
                   Icons.email_outlined,
                   size: 20,
@@ -329,7 +329,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 GestureDetector(
                   onTap: () {
                     context.pop();
-                    context.push('/login');
+                    context.pushNamed('login');
                   },
                   child: Text(
                     'Đăng nhập',
