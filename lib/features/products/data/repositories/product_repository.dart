@@ -1,0 +1,114 @@
+import 'package:smart_shopping_chatbot/core/network/api_client.dart';
+import 'package:smart_shopping_chatbot/core/network/paginated_response.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/image_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+
+/// Repository for product, variant, and image API calls.
+class ProductRepository {
+  final ApiClient _apiClient;
+
+  ProductRepository({ApiClient? apiClient})
+    : _apiClient = apiClient ?? ApiClient.instance;
+
+  // ───────── Products ─────────
+
+  /// Fetch paginated products.
+  ///
+  /// `GET /products?pageIndex={page}&pageSize={size}`
+  Future<PaginatedResponse<ProductModel>> getProducts({
+    int pageIndex = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/products',
+      queryParameters: {'pageIndex': pageIndex, 'pageSize': pageSize},
+    );
+
+    return PaginatedResponse.fromJson(response.data!, ProductModel.fromJson);
+  }
+
+  /// Fetch a single product by ID.
+  ///
+  /// `GET /products/{id}`
+  Future<ProductModel> getProductById(int id) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/products/$id',
+    );
+
+    final data = response.data!;
+    final productJson = data.containsKey('data')
+        ? data['data'] as Map<String, dynamic>
+        : data;
+
+    return ProductModel.fromJson(productJson);
+  }
+
+  // ───────── Variants ─────────
+
+  /// Fetch paginated variants (the real purchasable items with price & images).
+  ///
+  /// `GET /variants?pageIndex={page}&pageSize={size}`
+  Future<PaginatedResponse<VariantModel>> getVariants({
+    int pageIndex = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/variants',
+      queryParameters: {'pageIndex': pageIndex, 'pageSize': pageSize},
+    );
+
+    return PaginatedResponse.fromJson(response.data!, VariantModel.fromJson);
+  }
+
+  /// Fetch a single variant by ID.
+  ///
+  /// `GET /variants/{id}`
+  Future<VariantModel> getVariantById(int id) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/variants/$id',
+    );
+
+    final data = response.data!;
+    final variantJson = data.containsKey('data')
+        ? data['data'] as Map<String, dynamic>
+        : data;
+
+    return VariantModel.fromJson(variantJson);
+  }
+
+  // ───────── Images ─────────
+
+  /// Fetch paginated images.
+  ///
+  /// `GET /images?pageIndex={page}&pageSize={size}`
+  Future<PaginatedResponse<ImageModel>> getImages({
+    int pageIndex = 1,
+    int pageSize = 50,
+  }) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/images',
+      queryParameters: {'pageIndex': pageIndex, 'pageSize': pageSize},
+    );
+
+    return PaginatedResponse.fromJson(response.data!, ImageModel.fromJson);
+  }
+
+  /// Fetch ALL images across all pages.
+  ///
+  /// Returns a flat list of every [ImageModel] in the database.
+  Future<List<ImageModel>> getAllImages() async {
+    final List<ImageModel> allImages = [];
+    int currentPage = 1;
+    bool hasMore = true;
+
+    while (hasMore) {
+      final response = await getImages(pageIndex: currentPage, pageSize: 50);
+      allImages.addAll(response.items);
+      hasMore = response.hasMore;
+      currentPage++;
+    }
+
+    return allImages;
+  }
+}
