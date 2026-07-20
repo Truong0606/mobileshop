@@ -75,6 +75,7 @@ class ChatRepository {
       final queryParams = {
         'externalCustomerId': externalCustomerId,
         'limit': limit,
+        // ignore: use_null_aware_elements
         if (lastCursor != null) 'lastCursor': lastCursor,
       };
 
