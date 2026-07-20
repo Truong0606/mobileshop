@@ -7,7 +7,8 @@ class ChatRepository {
   final Dio _dio;
 
   ChatRepository()
-      : _dio = Dio(BaseOptions(
+    : _dio = Dio(
+        BaseOptions(
           baseUrl: AppConfig.instance.chatbotApiBaseUrl,
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 15),
@@ -16,7 +17,8 @@ class ChatRepository {
             if (AppConfig.instance.chatbotApiKey.isNotEmpty)
               'x-api-key': AppConfig.instance.chatbotApiKey,
           },
-        ));
+        ),
+      );
 
   // Helper method no longer needed since it's in BaseOptions, but we can keep empty options or remove it.
 
@@ -73,7 +75,7 @@ class ChatRepository {
       final queryParams = {
         'externalCustomerId': externalCustomerId,
         'limit': limit,
-        if (lastCursor != null) 'lastCursor': lastCursor,
+        ?'lastCursor': lastCursor,
       };
 
       final response = await _dio.get(

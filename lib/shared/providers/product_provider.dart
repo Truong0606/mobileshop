@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
@@ -372,7 +373,7 @@ class ProductDetailNotifier extends StateNotifier<ProductDetailState> {
         feedbacks = feedbackResponse.items;
       } catch (e) {
         // Feedback might fail if not implemented on backend, ignore for now
-        print('Error fetching feedbacks: $e');
+        debugPrint('Error fetching feedbacks: $e');
       }
 
       state = state.copyWith(

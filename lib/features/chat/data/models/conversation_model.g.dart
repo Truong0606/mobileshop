@@ -60,16 +60,6 @@ ConversationListResponse _$ConversationListResponseFromJson(
   totalPages: (json['totalPages'] as num).toInt(),
 );
 
-Map<String, dynamic> _$ConversationListResponseToJson(
-  ConversationListResponse instance,
-) => <String, dynamic>{
-  'items': instance.items,
-  'pageIndex': instance.pageIndex,
-  'pageSize': instance.pageSize,
-  'totalCount': instance.totalCount,
-  'totalPages': instance.totalPages,
-};
-
 MessageListResponse _$MessageListResponseFromJson(Map<String, dynamic> json) =>
     MessageListResponse(
       items: (json['items'] as List<dynamic>)

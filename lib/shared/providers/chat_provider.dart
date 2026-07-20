@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:smart_shopping_chatbot/core/network/api_client.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/repositories/chat_repository.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
@@ -16,8 +15,8 @@ ChatRepository chatRepository(Ref ref) {
 @riverpod
 String chatCustomerId(Ref ref) {
   final auth = ref.watch(authProvider);
-  if (auth.accountId != null && auth.accountId!.isNotEmpty) {
-    return auth.accountId!;
+  if (auth.user != null && auth.user!.email.isNotEmpty) {
+    return auth.user!.email;
   }
   // Generate a guest UUID if not logged in
   return 'guest_${const Uuid().v4()}';

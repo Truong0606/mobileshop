@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
@@ -66,7 +65,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: cartState.items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              separatorBuilder: (_, _) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final item = cartState.items[index];
                 return Container(
@@ -121,7 +120,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              PriceFormatter.format(item.price),
+                              PriceFormatter.formatVND(item.price),
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary,
@@ -211,7 +210,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                           style: GoogleFonts.inter(color: Colors.grey),
                         ),
                         Text(
-                          PriceFormatter.format(cartState.totalPrice),
+                          PriceFormatter.formatVND(cartState.totalPrice),
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

@@ -20,7 +20,7 @@ class CartRepository {
     final data = response.data['data'];
     return PaginatedResponse.fromJson(
       data,
-      (json) => CartItemModel.fromJson(json as Map<String, dynamic>),
+      (json) => CartItemModel.fromJson(json),
     );
   }
 

@@ -96,7 +96,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 child: Image.network(
                   displayImageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
+                  errorBuilder: (context, error, stackTrace) => const Center(
                     child: Icon(Icons.image_not_supported, size: 60),
                   ),
                 ),
@@ -160,7 +160,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                   // ── Price ──
                   Text(
-                    PriceFormatter.format(displayPrice),
+                    PriceFormatter.formatVND(displayPrice),
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -284,7 +284,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         isDark,
                       ),
                       TextButton(
-                        onFeedbackTap,
+                        onPressed: onFeedbackTap,
                         child: const Text('Viết đánh giá'),
                       ),
                     ],
@@ -339,7 +339,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                   // ── Ask AI ──
                   GestureDetector(
-                    onTap: () => context.push('/chat/product-$productId'),
+                    onTap: () =>
+                        context.push('/chat/product-${widget.productId}'),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -556,13 +557,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             rating: rating,
                             comment: commentController.text,
                           );
-                          if (mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã gửi đánh giá')),
-                            );
-                          }
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã gửi đánh giá')),
+                          );
                         } catch (e) {
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Lỗi gửi đánh giá: $e')),
                           );

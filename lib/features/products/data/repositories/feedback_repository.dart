@@ -21,7 +21,7 @@ class FeedbackRepository {
     final data = response.data['data'];
     return PaginatedResponse.fromJson(
       data,
-      (json) => FeedbackModel.fromJson(json as Map<String, dynamic>),
+      (json) => FeedbackModel.fromJson(json),
     );
   }
 

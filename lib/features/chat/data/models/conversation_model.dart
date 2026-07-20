@@ -48,7 +48,7 @@ class ChatMessageModel {
   Map<String, dynamic> toJson() => _$ChatMessageModelToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ConversationListResponse {
   final List<ConversationModel> items;
   final int pageIndex;

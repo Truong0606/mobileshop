@@ -224,8 +224,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             divisions: 50,
             activeColor: AppColors.primary,
             labels: RangeLabels(
-              PriceFormatter.format(_priceRange.start),
-              PriceFormatter.format(_priceRange.end),
+              PriceFormatter.formatVNDDouble(_priceRange.start),
+              PriceFormatter.formatVNDDouble(_priceRange.end),
             ),
             onChanged: (v) => setState(() => _priceRange = v),
           ),
@@ -233,14 +233,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                PriceFormatter.format(_priceRange.start),
+                PriceFormatter.formatVNDDouble(_priceRange.start),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.primary,
                 ),
               ),
               Text(
-                PriceFormatter.format(_priceRange.end),
+                PriceFormatter.formatVNDDouble(_priceRange.end),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.primary,
@@ -293,7 +293,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         child: Image.network(
                           thumbnail,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildPlaceholder(),
                         ),
                       )
                     : _buildPlaceholder(),
