@@ -8,6 +8,7 @@ import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
 import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/typing_indicator.dart';
+import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/rich_text_message.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chatId});
@@ -199,18 +200,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 bottomRight: Radius.circular(isUser ? 4 : 16),
               ),
             ),
-            child: Text(
-              message.content,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                height: 1.4,
-                color: isUser
-                    ? AppColors.userBubbleText
-                    : (isDark
-                          ? AppColors.botBubbleTextDark
-                          : AppColors.botBubbleTextLight),
-              ),
-            ),
+            child: isUser
+                ? Text(
+                    message.content,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.userBubbleText,
+                    ),
+                  )
+                : RichTextMessage(
+                    text: message.content,
+                    isDark: isDark,
+                    isUser: isUser,
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 4),
