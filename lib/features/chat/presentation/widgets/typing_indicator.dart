@@ -66,7 +66,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                         color: (widget.isDark
                                 ? AppColors.botBubbleTextDark
                                 : AppColors.botBubbleTextLight)
-                            .withOpacity(isHighlighted ? 1.0 : 0.3),
+                            .withValues(alpha: isHighlighted ? 1.0 : 0.3),
                         shape: BoxShape.circle,
                       ),
                     );

@@ -2,8 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/repositories/chat_repository.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
-import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
-import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 part 'chat_provider.g.dart';
 
@@ -168,9 +167,9 @@ class ChatMessages extends _$ChatMessages {
     } catch (e, st) {
       _isTyping = false;
       state = AsyncData(state.value ?? []);
-      print('=== CHAT ERROR ===');
-      print(e);
-      print(st);
+      debugPrint('=== CHAT ERROR ===');
+      debugPrint(e.toString());
+      debugPrint(st.toString());
       // Revert optimistic message on error (ignored for demo simplicity)
     }
   }
