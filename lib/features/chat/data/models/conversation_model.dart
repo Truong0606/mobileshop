@@ -82,9 +82,8 @@ class MessageListResponse {
 @JsonSerializable(createFactory: false)
 class SendMessageCommand {
   final String message;
-  final String externalCustomerId;
 
-  SendMessageCommand({required this.message, required this.externalCustomerId});
+  SendMessageCommand({required this.message});
 
   Map<String, dynamic> toJson() => _$SendMessageCommandToJson(this);
 }

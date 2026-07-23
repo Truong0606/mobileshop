@@ -11,11 +11,7 @@ ChatRepository chatRepository(Ref ref) {
   return ChatRepository();
 }
 
-@riverpod
-String chatCustomerId(Ref ref) {
-  // Tạm thời gán hardcode id của business owner để test
-  return '6a572ade7904e1b8e301a78b';
-}
+
 
 @riverpod
 class ConversationList extends _$ConversationList {
@@ -26,9 +22,8 @@ class ConversationList extends _$ConversationList {
 
   Future<List<ConversationModel>> _fetchConversations() async {
     final repo = ref.read(chatRepositoryProvider);
-    final customerId = ref.read(chatCustomerIdProvider);
 
-    final res = await repo.getConversations(customerId, pageSize: 50);
+    final res = await repo.getConversations(pageSize: 50);
     final items = res.items;
     items.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return items;
@@ -47,9 +42,8 @@ class ChatMessages extends _$ChatMessages {
     if (conversationId == 'new') return [];
 
     final repo = ref.read(chatRepositoryProvider);
-    final customerId = ref.read(chatCustomerIdProvider);
 
-    final res = await repo.getMessages(conversationId, customerId);
+    final res = await repo.getMessages(conversationId);
 
     final messages = res.items;
     messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -60,28 +54,34 @@ class ChatMessages extends _$ChatMessages {
     return messages;
   }
 
+  // Lưu conversation ID thật sau khi tạo hội thoại mới,
+  // để các tin nhắn tiếp theo dùng sendMessage thay vì startConversation.
+  String? _realConversationId;
   String? _lastCursor;
   bool _hasMore = false;
   bool _isLoadingMore = false;
   bool _isTyping = false;
 
+  /// ID hội thoại thực tế (dùng cho API calls)
+  String get _effectiveId => _realConversationId ?? conversationId;
+
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
   bool get isTyping => _isTyping;
+  /// Expose real ID để UI biết conversation đã được tạo
+  String? get realConversationId => _realConversationId;
 
   Future<void> loadMore() async {
-    if (!_hasMore || _isLoadingMore || conversationId == 'new') return;
+    if (!_hasMore || _isLoadingMore || _effectiveId == 'new') return;
 
     _isLoadingMore = true;
     state = AsyncData(state.value ?? []);
 
     try {
       final repo = ref.read(chatRepositoryProvider);
-      final customerId = ref.read(chatCustomerIdProvider);
 
       final res = await repo.getMessages(
-        conversationId,
-        customerId,
+        _effectiveId,
         lastCursor: _lastCursor,
       );
 
@@ -100,11 +100,10 @@ class ChatMessages extends _$ChatMessages {
 
   Future<void> sendMessage(String text) async {
     final repo = ref.read(chatRepositoryProvider);
-    final customerId = ref.read(chatCustomerIdProvider);
 
     final tempMsg = ChatMessageModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      conversationId: conversationId,
+      conversationId: _effectiveId,
       sender: 'User',
       content: text,
       createdAt: DateTime.now(),
@@ -117,15 +116,18 @@ class ChatMessages extends _$ChatMessages {
 
     try {
       ConversationModel response;
-      if (conversationId == 'new') {
+      // Chỉ gọi startConversation nếu chưa có realConversationId
+      if (_effectiveId == 'new') {
         response = await repo.startConversation(
-          SendMessageCommand(message: text, externalCustomerId: customerId),
+          SendMessageCommand(message: text),
         );
+        // Lưu lại ID thật để các tin nhắn sau dùng sendMessage
+        _realConversationId = response.id;
         ref.read(conversationListProvider.notifier).refresh();
       } else {
         response = await repo.sendMessage(
-          conversationId,
-          SendMessageCommand(message: text, externalCustomerId: customerId),
+          _effectiveId,
+          SendMessageCommand(message: text),
         );
       }
 
@@ -151,16 +153,12 @@ class ChatMessages extends _$ChatMessages {
               createdAt: lastMsg.createdAt,
             );
             
-            // Xóa đi các tin nhắn streaming trước đó của chính nó (nếu có) bằng cách lọc theo id
-            // Hoặc đơn giản là thêm trực tiếp nếu ta giả định id tin nhắn bot là duy nhất và luôn ở cuối
-            // Để an toàn, filter các tin nhắn không phải là streamingMsg hiện tại
             final msgsWithoutCurrentStreaming = currentMessages.where((m) => m.id != lastMsg.id).toList();
             
             state = AsyncData([...msgsWithoutCurrentStreaming, streamingMsg]);
             await Future.delayed(const Duration(milliseconds: 30));
           }
         } else {
-          // Trừ trường hợp fallback
           state = AsyncData([...currentMessages, lastMsg]);
         }
       }
@@ -170,7 +168,6 @@ class ChatMessages extends _$ChatMessages {
       debugPrint('=== CHAT ERROR ===');
       debugPrint(e.toString());
       debugPrint(st.toString());
-      // Revert optimistic message on error (ignored for demo simplicity)
     }
   }
 }

@@ -1,0 +1,1 @@
+import 'dart:convert'; import 'dart:io'; void main() { final d = jsonDecode(File('shopfake_swagger_new.json').readAsStringSync()); print(d['paths'].keys.where((k) => k.toString().contains('chat')).toList()); }

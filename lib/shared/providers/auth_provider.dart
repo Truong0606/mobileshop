@@ -8,10 +8,12 @@ import 'package:go_router/go_router.dart';
 import 'package:smart_shopping_chatbot/core/network/api_client.dart';
 import 'package:smart_shopping_chatbot/core/config/router.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
+import 'package:smart_shopping_chatbot/core/utils/jwt_utils.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/models/login_request.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/models/register_request.dart';
 import 'package:smart_shopping_chatbot/features/auth/data/repositories/auth_repository.dart';
 import 'package:smart_shopping_chatbot/features/auth/domain/entities/user.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 
 /// Authentication state – either authenticated with a [User] or not.
 class AuthState {
@@ -65,8 +67,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     logout();
     final context = rootNavigatorKey.currentContext;
     if (context != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.')),
+      AppNotification.show(
+        context,
+        message: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.',
+        type: NotificationType.error,
       );
       context.goNamed('login');
     }
@@ -77,15 +81,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = await _storage.read(key: _tokenKey);
       final email = await _storage.read(key: _emailKey);
       if (token != null && token.isNotEmpty) {
+        // Check if token is expired before restoring session
+        if (JwtUtils.isExpired(token)) {
+          await _storage.delete(key: _tokenKey);
+          await _storage.delete(key: _emailKey);
+          return;
+        }
+
         ApiClient.instance.setAuthToken(token);
+        final role = JwtUtils.extractRole(token) ?? 'Customer';
         final user = User(
           id: 'user_restored',
           name: _nameFromEmail(email ?? 'User'),
           email: email ?? '',
           avatarUrl: null,
+          role: role,
           createdAt: DateTime.now(),
         );
         state = AuthState(user: user, token: token);
+
+        // If admin, redirect to admin-only screen
+        if (user.isAdmin) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = rootNavigatorKey.currentContext;
+            if (context != null && context.mounted) {
+              context.goNamed('adminRedirect');
+            }
+          });
+        }
       }
     } catch (e) {
       // Ignore secure storage read errors
@@ -110,12 +133,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _storage.write(key: _tokenKey, value: response.accessToken);
       await _storage.write(key: _emailKey, value: response.email ?? email);
 
+      // Decode JWT to extract user role
+      final role = JwtUtils.extractRole(response.accessToken) ?? 'Customer';
+
       // Build user from response or from the email
       final user = User(
         id: response.userId ?? 'user_${DateTime.now().millisecondsSinceEpoch}',
         name: response.fullName ?? _nameFromEmail(email),
         email: response.email ?? email,
         avatarUrl: null,
+        role: role,
         createdAt: DateTime.now(),
       );
 

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -30,8 +31,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập email và mật khẩu')),
+      AppNotification.show(
+        context,
+        message: 'Vui lòng nhập email và mật khẩu',
+        type: NotificationType.warning,
       );
       return;
     }
@@ -42,14 +45,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (mounted) {
       if (success) {
-        context.goNamed('profile');
+        // Check if the logged-in user is an Admin
+        final user = ref.read(authProvider).user;
+        if (user != null && user.isAdmin) {
+          context.goNamed('adminRedirect');
+        } else {
+          context.goNamed('profile');
+        }
       } else {
         final error = ref.read(authProvider).errorMessage;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error ?? 'Đăng nhập thất bại'),
-            backgroundColor: AppColors.error,
-          ),
+        AppNotification.show(
+          context,
+          message: error ?? 'Đăng nhập thất bại',
+          type: NotificationType.error,
         );
       }
     }

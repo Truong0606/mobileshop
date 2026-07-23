@@ -1,24 +1,12 @@
-import 'package:smart_shopping_chatbot/core/config/app_config.dart';
+import 'package:smart_shopping_chatbot/core/network/api_client.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:dio/dio.dart';
 
 class ChatRepository {
-  final Dio _dio;
+  ChatRepository();
 
-  ChatRepository()
-    : _dio = Dio(
-        BaseOptions(
-          baseUrl: AppConfig.instance.chatbotApiBaseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          headers: {
-            'Content-Type': 'application/json',
-            if (AppConfig.instance.chatbotApiKey.isNotEmpty)
-              'x-api-key': AppConfig.instance.chatbotApiKey,
-          },
-        ),
-      );
+  Dio get _dio => ApiClient.instance.dio;
 
   // Helper method no longer needed since it's in BaseOptions, but we can keep empty options or remove it.
 
@@ -35,7 +23,7 @@ class ChatRepository {
   ) async {
     try {
       final response = await _dio.post(
-        '/chat/conversations/messages',
+        '/chat/nessages',
         data: command.toJson(),
       );
       final data = response.data['data'] ?? response.data;
@@ -56,7 +44,7 @@ class ChatRepository {
       );
     } on DioException catch (e) {
       throw ServerException(
-        message: e.message ?? 'Failed to start conversation',
+        message: '${e.message} - Data: ${e.response?.data}',
       );
     }
   }
@@ -69,7 +57,7 @@ class ChatRepository {
   ) async {
     try {
       final response = await _dio.post(
-        '/chat/conversations/$conversationId/messages',
+        '/chat/$conversationId/messages',
         data: command.toJson(),
       );
       final data = response.data['data'] ?? response.data;
@@ -89,28 +77,27 @@ class ChatRepository {
         ],
       );
     } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Failed to send message');
+      throw ServerException(
+        message: '${e.message} - Data: ${e.response?.data}',
+      );
     }
   }
 
   /// 3. Get Chat History (Infinite Scroll with Cursor)
   /// GET /api/v1/chat/conversations/{id}/messages
   Future<MessageListResponse> getMessages(
-    String conversationId,
-    String externalCustomerId, {
+    String conversationId, {
     String? lastCursor,
     int limit = 20,
   }) async {
     try {
       final queryParams = {
-        'externalCustomerId': externalCustomerId,
         'limit': limit,
-        // ignore: use_null_aware_elements
         if (lastCursor != null) 'lastCursor': lastCursor,
       };
 
       final response = await _dio.get(
-        '/chat/conversations/$conversationId/messages',
+        '/chat/$conversationId/messages',
         queryParameters: queryParams,
       );
 
@@ -127,26 +114,26 @@ class ChatRepository {
         nextCursor: json['nextCursor'],
       );
     } on DioException catch (e) {
-      throw ServerException(message: e.message ?? 'Failed to get messages');
+      throw ServerException(
+        message: '${e.message} - Data: ${e.response?.data}',
+      );
     }
   }
 
   /// 4. List All Conversations for a Customer
   /// GET /api/v1/chat/conversations
-  Future<ConversationListResponse> getConversations(
-    String externalCustomerId, {
+  Future<ConversationListResponse> getConversations({
     int pageIndex = 1,
     int pageSize = 10,
   }) async {
     try {
       final queryParams = {
-        'externalCustomerId': externalCustomerId,
         'pageIndex': pageIndex,
         'pageSize': pageSize,
       };
 
       final response = await _dio.get(
-        '/chat/conversations',
+        '/chat',
         queryParameters: queryParams,
       );
 
@@ -165,7 +152,11 @@ class ChatRepository {
         totalPages: json['totalPages'] ?? 0,
       );
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
+      // Handle 404 (no conversations endpoint) or 400 "Customer not found"
+      // (customer hasn't chatted yet, so no customer record exists in chat service)
+      if (e.response?.statusCode == 404 ||
+          (e.response?.statusCode == 400 &&
+              e.response?.data?.toString().contains('Customer not found') == true)) {
         return ConversationListResponse(
           items: [],
           pageIndex: pageIndex,
@@ -175,7 +166,7 @@ class ChatRepository {
         );
       }
       throw ServerException(
-        message: e.message ?? 'Failed to list conversations',
+        message: '${e.message} - Data: ${e.response?.data}',
       );
     }
   }

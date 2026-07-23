@@ -32,6 +32,8 @@ class ApiClient {
 
   late final Dio _dio;
 
+  Dio get dio => _dio;
+
   /// Auth token – set after login, cleared on logout.
   String? _authToken;
 

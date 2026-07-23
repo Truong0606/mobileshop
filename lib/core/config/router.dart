@@ -12,7 +12,12 @@ import 'package:smart_shopping_chatbot/features/products/presentation/screens/pr
 import 'package:smart_shopping_chatbot/features/products/presentation/screens/compare_screen.dart';
 import 'package:smart_shopping_chatbot/features/auth/presentation/screens/login_screen.dart';
 import 'package:smart_shopping_chatbot/features/auth/presentation/screens/register_screen.dart';
+import 'package:smart_shopping_chatbot/features/auth/presentation/screens/admin_redirect_screen.dart';
 import 'package:smart_shopping_chatbot/features/cart/presentation/screens/cart_screen.dart';
+import 'package:smart_shopping_chatbot/features/orders/presentation/screens/checkout_screen.dart';
+import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_history_screen.dart';
+import 'package:smart_shopping_chatbot/features/products/presentation/screens/wishlist_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/edit_profile_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Navigation keys — used to preserve navigator state per branch.
@@ -140,6 +145,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'cart',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CartScreen(),
+      ),
+
+      GoRoute(
+        path: '/admin-redirect',
+        name: 'adminRedirect',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AdminRedirectScreen(),
+      ),
+
+      GoRoute(
+        path: '/checkout',
+        name: 'checkout',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CheckoutScreen(),
+      ),
+
+      GoRoute(
+        path: '/orders',
+        name: 'orders',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const OrderHistoryScreen(),
+      ),
+
+      GoRoute(
+        path: '/wishlist',
+        name: 'wishlist',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const WishlistScreen(),
+      ),
+
+      GoRoute(
+        path: '/edit-profile',
+        name: 'editProfile',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const EditProfileScreen(),
       ),
     ],
 

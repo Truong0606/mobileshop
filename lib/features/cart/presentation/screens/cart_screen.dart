@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/empty_state_widget.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -45,22 +47,12 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           : cartState.error != null && cartState.items.isEmpty
           ? Center(child: Text(cartState.error!))
           : cartState.items.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Giỏ hàng trống',
-                    style: GoogleFonts.inter(fontSize: 16),
-                  ),
-                ],
-              ),
+          ? EmptyStateWidget(
+              icon: Icons.shopping_cart_outlined,
+              title: 'Giỏ hàng trống',
+              message: 'Hãy thêm sản phẩm vào giỏ hàng để bắt đầu mua sắm.',
+              buttonText: 'Khám phá ngay',
+              onButtonPressed: () => context.goNamed('home'),
             )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -220,15 +212,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Tính năng Thanh toán đang phát triển',
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed: () => context.goNamed('checkout'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(

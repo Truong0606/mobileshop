@@ -71,5 +71,4 @@ MessageListResponse _$MessageListResponseFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SendMessageCommandToJson(SendMessageCommand instance) =>
     <String, dynamic>{
       'message': instance.message,
-      'externalCustomerId': instance.externalCustomerId,
     };

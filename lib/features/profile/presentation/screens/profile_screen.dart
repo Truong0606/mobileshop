@@ -63,16 +63,16 @@ class ProfileScreen extends ConsumerWidget {
                     if (authState.isLoggedIn) ...[
                       _sectionTitle('Tài khoản', isDark),
                       _menuItem(
-                        Icons.shopping_bag_outlined,
+                        Icons.receipt_long_outlined,
                         'Đơn mua',
                         isDark,
-                        onTap: () {},
+                        onTap: () => context.goNamed('orders'),
                       ),
                       _menuItem(
                         Icons.favorite_border_rounded,
                         'Yêu thích',
                         isDark,
-                        onTap: () {},
+                        onTap: () => context.goNamed('wishlist'),
                       ),
                       _menuItem(
                         Icons.location_on_outlined,
@@ -349,7 +349,7 @@ class ProfileScreen extends ConsumerWidget {
 
         // Edit profile
         GestureDetector(
-          onTap: () {},
+          onTap: () => context.goNamed('editProfile'),
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(

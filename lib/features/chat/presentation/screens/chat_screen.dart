@@ -47,8 +47,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    ref.read(chatMessagesProvider(widget.chatId).notifier).sendMessage(text);
     _controller.clear();
+    ref.read(chatMessagesProvider(widget.chatId).notifier).sendMessage(text);
     _scrollToBottom();
   }
 

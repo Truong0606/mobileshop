@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -33,8 +34,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
+      AppNotification.show(
+        context,
+        message: 'Vui lòng nhập đầy đủ thông tin',
+        type: NotificationType.warning,
       );
       return;
     }
@@ -48,11 +51,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         context.goNamed('profile');
       } else {
         final error = ref.read(authProvider).errorMessage;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error ?? 'Đăng ký thất bại'),
-            backgroundColor: AppColors.error,
-          ),
+        AppNotification.show(
+          context,
+          message: error ?? 'Đăng ký thất bại',
+          type: NotificationType.error,
         );
       }
     }

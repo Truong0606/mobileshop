@@ -23,23 +23,6 @@ final chatRepositoryProvider = AutoDisposeProvider<ChatRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ChatRepositoryRef = AutoDisposeProviderRef<ChatRepository>;
-String _$chatCustomerIdHash() => r'7066ce38959066bc45f6b29c4d2276c9170184fa';
-
-/// See also [chatCustomerId].
-@ProviderFor(chatCustomerId)
-final chatCustomerIdProvider = AutoDisposeProvider<String>.internal(
-  chatCustomerId,
-  name: r'chatCustomerIdProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$chatCustomerIdHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ChatCustomerIdRef = AutoDisposeProviderRef<String>;
 String _$conversationListHash() => r'f197b20726d6677ed544bddaed929eca5785ef9d';
 
 /// See also [ConversationList].

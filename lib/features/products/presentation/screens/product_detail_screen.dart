@@ -9,6 +9,7 @@ import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({super.key, required this.productId});
@@ -560,13 +561,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           );
                           if (!context.mounted) return;
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã gửi đánh giá')),
+                          AppNotification.show(
+                            context,
+                            message: 'Đã gửi đánh giá',
+                            type: NotificationType.success,
                           );
                         } catch (e) {
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Lỗi gửi đánh giá: $e')),
+                          AppNotification.show(
+                            context,
+                            message: 'Lỗi gửi đánh giá: $e',
+                            type: NotificationType.error,
                           );
                         }
                       },
@@ -596,20 +601,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             .read(cartProvider.notifier)
             .addToCart(_selectedVariant!.id, 1);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã thêm ${_selectedVariant!.variantName} vào giỏ'),
-              backgroundColor: AppColors.success,
-            ),
+          AppNotification.show(
+            context,
+            message: 'Đã thêm ${_selectedVariant!.variantName} vào giỏ',
+            type: NotificationType.success,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi thêm vào giỏ: $e'),
-              backgroundColor: AppColors.error,
-            ),
+          AppNotification.show(
+            context,
+            message: 'Lỗi thêm vào giỏ: $e',
+            type: NotificationType.error,
           );
         }
       }

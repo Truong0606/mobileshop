@@ -25,7 +25,12 @@ class AuthRepository {
       data: request.toJson(),
     );
 
-    return LoginResponse.fromJson(response.data!);
+    final responseData = response.data!;
+    final json = responseData.containsKey('data') && responseData['data'] is Map<String, dynamic>
+        ? responseData['data'] as Map<String, dynamic>
+        : responseData;
+
+    return LoginResponse.fromJson(json);
   }
 
   /// Register a new user account.
@@ -38,6 +43,11 @@ class AuthRepository {
       data: request.toJson(),
     );
 
-    return RegisterResponse.fromJson(response.data!);
+    final responseData = response.data!;
+    final json = responseData.containsKey('data') && responseData['data'] is Map<String, dynamic>
+        ? responseData['data'] as Map<String, dynamic>
+        : responseData;
+
+    return RegisterResponse.fromJson(json);
   }
 }
