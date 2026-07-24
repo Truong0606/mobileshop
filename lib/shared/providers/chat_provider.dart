@@ -164,7 +164,15 @@ class ChatMessages extends _$ChatMessages {
       }
     } catch (e, st) {
       _isTyping = false;
-      state = AsyncData(state.value ?? []);
+      // Hiển thị lỗi dưới dạng tin nhắn bot thân thiện
+      final errorMsg = ChatMessageModel(
+        id: 'error_${DateTime.now().millisecondsSinceEpoch}',
+        conversationId: _effectiveId,
+        sender: 'Bot',
+        content: e.toString().replaceAll('ServerException: ', '').replaceAll('Exception: ', ''),
+        createdAt: DateTime.now(),
+      );
+      state = AsyncData([...(state.value ?? []), errorMsg]);
       debugPrint('=== CHAT ERROR ===');
       debugPrint(e.toString());
       debugPrint(st.toString());

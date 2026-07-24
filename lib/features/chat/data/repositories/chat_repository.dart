@@ -44,7 +44,7 @@ class ChatRepository {
       );
     } on DioException catch (e) {
       throw ServerException(
-        message: '${e.message} - Data: ${e.response?.data}',
+        message: _friendlyErrorMessage(e),
       );
     }
   }
@@ -78,7 +78,7 @@ class ChatRepository {
       );
     } on DioException catch (e) {
       throw ServerException(
-        message: '${e.message} - Data: ${e.response?.data}',
+        message: _friendlyErrorMessage(e),
       );
     }
   }
@@ -117,7 +117,7 @@ class ChatRepository {
       );
     } on DioException catch (e) {
       throw ServerException(
-        message: '${e.message} - Data: ${e.response?.data}',
+        message: _friendlyErrorMessage(e),
       );
     }
   }
@@ -168,8 +168,28 @@ class ChatRepository {
         );
       }
       throw ServerException(
-        message: '${e.message} - Data: ${e.response?.data}',
+        message: _friendlyErrorMessage(e),
       );
     }
+  }
+
+  /// Helper: trả về thông báo lỗi thân thiện cho người dùng
+  String _friendlyErrorMessage(DioException e) {
+    final statusCode = e.response?.statusCode;
+    if (statusCode != null && statusCode >= 500) {
+      return '🔧 Hệ thống AI đang bảo trì, vui lòng thử lại sau ít phút.';
+    }
+    if (statusCode == 400) {
+      return '⚠️ Không thể gửi tin nhắn lúc này. Hệ thống AI đang tạm thời gián đoạn.';
+    }
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return '⏱️ Kết nối tới AI bị quá thời gian. Vui lòng kiểm tra mạng và thử lại.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return '📡 Không thể kết nối tới máy chủ AI. Vui lòng kiểm tra kết nối mạng.';
+    }
+    return '❌ Đã xảy ra lỗi, vui lòng thử lại sau.';
   }
 }

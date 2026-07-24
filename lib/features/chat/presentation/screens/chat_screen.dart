@@ -107,7 +107,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
+              error: (e, st) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.construction_rounded, size: 48, color: Colors.orange[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        e.toString().replaceAll('ServerException: ', '').replaceAll('Exception: ', ''),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           _buildInputBar(context, isDark),
