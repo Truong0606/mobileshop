@@ -91,10 +91,12 @@ class ChatRepository {
     int limit = 20,
   }) async {
     try {
-      final queryParams = {
+      final queryParams = <String, dynamic>{
         'limit': limit,
-        ?'lastCursor': lastCursor,
       };
+      if (lastCursor != null) {
+        queryParams['lastCursor'] = lastCursor;
+      }
 
       final response = await _dio.get(
         '/chat/$conversationId/messages',
