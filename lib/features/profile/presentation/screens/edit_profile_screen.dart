@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,6 +21,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        setState(() {
+          _nameController.text = user.name;
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -32,19 +46,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _isLoading = true;
       });
       
-      // Mock API call
-      await Future.delayed(const Duration(seconds: 1));
+      final success = await ref
+          .read(authProvider.notifier)
+          .updateProfile(_nameController.text.trim());
       
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        AppNotification.show(
-          context,
-          message: 'Cập nhật thành công',
-          type: NotificationType.success,
-        );
-        context.pop();
+
+        if (success) {
+          AppNotification.show(
+            context,
+            message: 'Cập nhật thành công',
+            type: NotificationType.success,
+          );
+          context.pop();
+        } else {
+          final error = ref.read(authProvider).errorMessage;
+          AppNotification.show(
+            context,
+            message: error ?? 'Cập nhật thất bại',
+            type: NotificationType.error,
+          );
+        }
       }
     }
   }

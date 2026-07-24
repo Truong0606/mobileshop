@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/wishlist_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,10 +20,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch both variants and images in parallel on first load
+    // Fetch variants, images, and categories in parallel on first load
     Future.microtask(() {
       ref.read(variantListProvider.notifier).fetchVariants();
       ref.read(imageMapProvider.notifier).fetchAllImages();
+      ref.read(categoryListProvider.notifier).fetchCategories();
     });
   }
 
@@ -40,6 +42,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             await Future.wait([
               ref.read(variantListProvider.notifier).refresh(),
               ref.read(imageMapProvider.notifier).refresh(),
+              ref.read(categoryListProvider.notifier).fetchCategories(),
             ]);
           },
           child: CustomScrollView(
@@ -55,13 +58,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               // ── Categories ──
               SliverToBoxAdapter(
-                child: _buildSectionTitle(context, 'Danh mục'),
+                child: _buildSectionTitle(context, 'Danh mục', onTap: () => context.goNamed('search')),
               ),
               SliverToBoxAdapter(child: _buildCategories(context, isDark)),
 
               // ── Products Showcase (from Variants API) ──
               SliverToBoxAdapter(
-                child: _buildSectionTitle(context, 'Sản phẩm nổi bật'),
+                child: _buildSectionTitle(context, 'Sản phẩm nổi bật', onTap: () => context.goNamed('search')),
               ),
 
               // Loading / Error / Data
@@ -80,26 +83,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               else if (variantState.variants.isEmpty)
                 SliverToBoxAdapter(child: _buildEmptyState(isDark))
               else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.62,
+                Builder(
+                  builder: (context) {
+                    // Group variants by productId
+                    final grouped = <int, VariantModel>{};
+                    for (final v in variantState.variants) {
+                      if (!grouped.containsKey(v.productId)) {
+                        grouped[v.productId] = v;
+                      }
+                    }
+                    final uniqueProducts = grouped.values.toList();
+
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.62,
+                            ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _buildProductCard(
+                            context,
+                            isDark,
+                            uniqueProducts[index],
+                            imageMap,
+                          ),
+                          childCount: uniqueProducts.length,
                         ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildVariantCard(
-                        context,
-                        isDark,
-                        variantState.variants[index],
-                        imageMap,
                       ),
-                      childCount: variantState.variants.length,
-                    ),
-                  ),
+                    );
+                  }
                 ),
 
               // Loading more indicator
@@ -297,7 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ─────────────────────────────────────────
   // Section Title
   // ─────────────────────────────────────────
-  Widget _buildSectionTitle(BuildContext context, String title) {
+  Widget _buildSectionTitle(BuildContext context, String title, {VoidCallback? onTap}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
@@ -314,12 +330,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   : AppColors.lightOnBackground,
             ),
           ),
-          Text(
-            'Xem tất cả',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              'Xem tất cả',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ],
@@ -331,88 +350,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Categories
   // ─────────────────────────────────────────
   Widget _buildCategories(BuildContext context, bool isDark) {
-    final categories = [
-      _CategoryItem('Áo thun', Icons.checkroom_rounded),
-      _CategoryItem('Hoodie', Icons.dry_cleaning_rounded),
-      _CategoryItem('Giày', Icons.ice_skating_rounded),
-      _CategoryItem('Túi xách', Icons.shopping_bag_rounded),
-      _CategoryItem('Phụ kiện', Icons.watch_rounded),
-    ];
+    final categoryState = ref.watch(categoryListProvider);
+    
+    if (categoryState.isLoading && categoryState.categories.isEmpty) {
+      return const SizedBox(
+        height: 90,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    if (categoryState.categories.isEmpty) {
+      return const SizedBox(height: 90, child: Center(child: Text('Chưa có danh mục')));
+    }
 
     return SizedBox(
       height: 90,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
+        itemCount: categoryState.categories.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final cat = categories[index];
-          return Container(
-            width: 80,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.darkSurfaceVariant
-                  : AppColors.lightSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-                width: 0.5,
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(cat.icon, color: AppColors.primary, size: 28),
-                const SizedBox(height: 6),
-                Text(
-                  cat.label,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.darkOnSurface
-                        : AppColors.lightOnSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          final cat = categoryState.categories[index];
+          // Có thể map icon tĩnh hoặc từ backend nếu có
+          final iconData = Icons.category_rounded; 
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+                child: Icon(iconData, color: AppColors.primary, size: 28),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                cat.name,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? AppColors.darkOnBackground : AppColors.lightOnBackground,
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
+
   // ─────────────────────────────────────────
-  // Variant Card — real data with image, price, attributes
+  // Product Card — groups variants and displays price, image
   // ─────────────────────────────────────────
-  Widget _buildVariantCard(
+  Widget _buildProductCard(
     BuildContext context,
     bool isDark,
     VariantModel variant,
     ImageMapState imageMap,
   ) {
-    final color = variant.getAttributeValue('color');
-    final size = variant.getAttributeValue('size');
-
-    // Resolve image: variant embedded → Images API by variant → Images API by product → null
-    String? imageUrl = variant.primaryImageUrl;
-    imageUrl ??= imageMap.getVariantThumbnail(variant.id);
-    imageUrl ??= imageMap.getProductThumbnail(variant.productId);
-
-    // Collect all images (for potential gallery view later)
-    final allImages = <String>{
-      ...variant.imageUrls,
-      ...imageMap.getVariantImages(variant.id),
-      ...imageMap.getProductImages(variant.productId),
-    }.toList();
+    // Retrieve cover image from ImageMapState or fallback to variant's first image
+    final coverImage = imageMap.getVariantThumbnail(variant.id) ?? 
+        (variant.imageUrls.isNotEmpty ? variant.imageUrls.first : 'https://via.placeholder.com/300?text=No+Image');
 
     return GestureDetector(
-      onTap: () => context.pushNamed('productDetail', pathParameters: {'id': variant.productId.toString()}),
+      onTap: () {
+        context.pushNamed(
+          'productDetail',
+          pathParameters: {'id': variant.productId.toString()},
+          extra: variant,
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
@@ -442,114 +461,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Product image from merged sources or fallback
-                    if (imageUrl != null)
-                      CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(
-                          color: isDark
-                              ? AppColors.darkSurfaceContainer
-                              : AppColors.lightSurfaceVariant,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
-                        errorWidget: (_, _, _) => _buildImageFallback(isDark),
-                      )
-                    else
-                      _buildImageFallback(isDark),
-
-                    // Image count badge (if multiple images)
-                    if (allImages.length > 1)
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.photo_library_rounded,
-                                size: 10,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                '${allImages.length}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                    CachedNetworkImage(
+                      imageUrl: coverImage,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      placeholder: (_, _) => Container(
+                        color: isDark
+                            ? AppColors.darkSurfaceContainer
+                            : AppColors.lightSurfaceVariant,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
-
-                    // Stock badge
-                    if (!variant.inStock)
-                      Positioned.fill(
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          child: Center(
-                            child: Text(
-                              'Hết hàng',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Attribute chips (Color, Size)
-                    if (color != null || size != null)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Row(
-                          children: [
-                            if (color != null)
-                              _buildChip(color, AppColors.primary),
-                            if (color != null && size != null)
-                              const SizedBox(width: 4),
-                            if (size != null)
-                              _buildChip(size, AppColors.secondary),
-                          ],
-                        ),
-                      ),
-
-                    // Wishlist button
+                      errorWidget: (_, _, _) => _buildImageFallback(isDark),
+                    ),
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: (isDark ? AppColors.darkSurface : Colors.white)
-                              .withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.favorite_border_rounded,
-                          size: 16,
-                          color: AppColors.error,
-                        ),
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final isFav = ref.watch(wishlistProvider).any((e) => e.productId == variant.productId);
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              final item = WishlistItem(
+                                productId: variant.productId,
+                                name: variant.productName,
+                                price: variant.price,
+                                imageUrl: coverImage,
+                              );
+                              ref.read(wishlistProvider.notifier).toggleFavorite(item);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          );
+                        }
                       ),
                     ),
                   ],
@@ -565,22 +524,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product name (parent)
+                    // Category Name or Brand (placeholder if not available)
                     Text(
-                      variant.productName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      'Thời trang',
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
 
-                    // Variant name
+                    // Product name
                     Text(
-                      variant.variantName,
+                      variant.productName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
@@ -593,7 +550,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const Spacer(),
 
-                    // Stock info
+                    // Price & Stock status
                     Row(
                       children: [
                         Icon(
@@ -619,11 +576,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-
-                    // Price
+                    const SizedBox(height: 6),
                     Text(
-                      variant.formattedPrice,
+                      '${variant.price.toStringAsFixed(0).replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), '.')}đ',
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -640,23 +595,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
 
   Widget _buildImageFallback(bool isDark) {
     return Container(
@@ -785,8 +723,3 @@ class _QuickAction {
   const _QuickAction(this.label, this.icon, this.color);
 }
 
-class _CategoryItem {
-  final String label;
-  final IconData icon;
-  const _CategoryItem(this.label, this.icon);
-}

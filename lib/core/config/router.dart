@@ -18,6 +18,13 @@ import 'package:smart_shopping_chatbot/features/orders/presentation/screens/chec
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_history_screen.dart';
 import 'package:smart_shopping_chatbot/features/products/presentation/screens/wishlist_screen.dart';
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/address_list_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/payment_methods_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/settings_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/language_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/notifications_settings_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/help_center_screen.dart';
+import 'package:smart_shopping_chatbot/features/profile/presentation/screens/about_app_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Navigation keys — used to preserve navigator state per branch.
@@ -180,6 +187,55 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'editProfile',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const EditProfileScreen(),
+      ),
+
+      GoRoute(
+        path: '/addresses',
+        name: 'addresses',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AddressListScreen(),
+      ),
+
+      GoRoute(
+        path: '/payment-methods',
+        name: 'paymentMethods',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const PaymentMethodsScreen(),
+      ),
+
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      GoRoute(
+        path: '/language',
+        name: 'language',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const LanguageScreen(),
+      ),
+
+      GoRoute(
+        path: '/notifications-settings',
+        name: 'notificationsSettings',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const NotificationsSettingsScreen(),
+      ),
+
+      GoRoute(
+        path: '/help-center',
+        name: 'helpCenter',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const HelpCenterScreen(),
+      ),
+
+      GoRoute(
+        path: '/about-app',
+        name: 'aboutApp',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AboutAppScreen(),
       ),
     ],
 

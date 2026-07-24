@@ -3,6 +3,7 @@ import 'package:smart_shopping_chatbot/core/network/paginated_response.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/image_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/category_model.dart';
 
 /// Repository for product, variant, and image API calls.
 class ProductRepository {
@@ -10,6 +11,20 @@ class ProductRepository {
 
   ProductRepository({ApiClient? apiClient})
     : _apiClient = apiClient ?? ApiClient.instance;
+
+  // ───────── Categories ─────────
+  
+  /// Fetch all categories.
+  Future<List<CategoryModel>> getCategories() async {
+    final response = await _apiClient.get<Map<String, dynamic>>('/categories');
+    
+    final paginated = PaginatedResponse.fromJson(
+      response.data!,
+      (json) => CategoryModel.fromJson(json),
+    );
+    
+    return paginated.items;
+  }
 
   // ───────── Products ─────────
 

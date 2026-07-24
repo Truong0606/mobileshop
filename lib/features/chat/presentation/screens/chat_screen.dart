@@ -114,7 +114,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 message: 'Hệ thống AI đang bảo trì hoặc mất kết nối mạng. Vui lòng thử lại sau.',
                 buttonText: 'Thử lại',
                 onButtonPressed: () {
-                  ref.refresh(chatMessagesProvider(widget.chatId));
+                  ref.invalidate(chatMessagesProvider(widget.chatId));
                 },
               ),
             ),

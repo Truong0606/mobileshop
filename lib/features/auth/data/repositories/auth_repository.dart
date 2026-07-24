@@ -50,4 +50,22 @@ class AuthRepository {
 
     return RegisterResponse.fromJson(json);
   }
+
+  /// Update user profile.
+  ///
+  /// Calls `PUT /accounts` with email, password, and fullName.
+  Future<void> updateProfile({
+    required String email,
+    required String password,
+    required String fullName,
+  }) async {
+    await _apiClient.put<Map<String, dynamic>>(
+      '/accounts',
+      data: {
+        'email': email,
+        'password': password,
+        'fullName': fullName,
+      },
+    );
+  }
 }

@@ -180,6 +180,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Update Profile via `PUT /api/v1/accounts`
+  Future<bool> updateProfile(String fullName) async {
+    if (state.user == null) return false;
+    
+    state = state.copyWith(isLoading: true, clearError: true);
+    
+    try {
+      await _repository.updateProfile(
+        email: state.user!.email,
+        password: '', // Passing empty since we don't have it. If backend strictly requires it, this will fail.
+        fullName: fullName,
+      );
+
+      // Update local state
+      final updatedUser = state.user!.copyWith(name: fullName);
+      state = state.copyWith(user: updatedUser, isLoading: false);
+      return true;
+    } on ApiException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Đã xảy ra lỗi: ${e.toString()}');
+      return false;
+    }
+  }
+
   /// Log out and clear all auth data.
   Future<void> logout() async {
     ApiClient.instance.clearAuthToken();

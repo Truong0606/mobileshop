@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/widgets/empty_state_widget.dart';
+import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -21,12 +23,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(cartProvider.notifier).fetchCart();
+      ref.read(imageMapProvider.notifier).fetchAllImages();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final cartState = ref.watch(cartProvider);
+    final imageMap = ref.watch(imageMapProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -84,10 +88,19 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                               : AppColors.lightSurfaceVariant,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.shopping_bag,
-                          color: Colors.grey,
-                        ),
+                        child: imageMap.getVariantThumbnail(item.productVariantId) != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: imageMap.getVariantThumbnail(item.productVariantId)!,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) => const Icon(Icons.shopping_bag, color: Colors.grey),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.shopping_bag,
+                                color: Colors.grey,
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

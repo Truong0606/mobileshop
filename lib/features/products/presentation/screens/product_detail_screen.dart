@@ -10,6 +10,7 @@ import 'package:smart_shopping_chatbot/features/products/data/models/variant_mod
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
+import 'package:smart_shopping_chatbot/shared/providers/wishlist_provider.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({super.key, required this.productId});
@@ -82,11 +83,25 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               isDark,
             ),
             actions: [
-              _circleButton(
-                context,
-                Icons.favorite_border_rounded,
-                () {},
-                isDark,
+              Consumer(
+                builder: (context, ref, _) {
+                  final isFav = ref.watch(wishlistProvider).any((e) => e.productId == product.id);
+                  return _circleButton(
+                    context,
+                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    () {
+                      final item = WishlistItem(
+                        productId: product.id,
+                        name: product.name,
+                        price: displayPrice,
+                        imageUrl: displayImageUrl,
+                      );
+                      ref.read(wishlistProvider.notifier).toggleFavorite(item);
+                    },
+                    isDark,
+                    color: isFav ? AppColors.error : (isDark ? AppColors.darkOnBackground : AppColors.lightOnBackground),
+                  );
+                }
               ),
               const SizedBox(width: 12),
             ],
@@ -623,8 +638,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     BuildContext context,
     IconData icon,
     VoidCallback onTap,
-    bool isDark,
-  ) {
+    bool isDark, {
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: GestureDetector(
@@ -641,7 +657,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           child: Icon(
             icon,
             size: 18,
-            color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+            color: color ?? (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
           ),
         ),
       ),

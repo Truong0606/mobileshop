@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:smart_shopping_chatbot/core/network/api_exceptions.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/category_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/feedback_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/repositories/product_repository.dart';
 import 'package:smart_shopping_chatbot/features/products/data/repositories/feedback_repository.dart';
@@ -110,6 +111,66 @@ class ProductListNotifier extends StateNotifier<ProductListState> {
 final productListProvider =
     StateNotifierProvider<ProductListNotifier, ProductListState>(
       (ref) => ProductListNotifier(),
+    );
+
+// ═══════════════════════════════════════════
+// Category List Provider
+// ═══════════════════════════════════════════
+
+class CategoryListState {
+  final List<CategoryModel> categories;
+  final bool isLoading;
+  final String? errorMessage;
+
+  const CategoryListState({
+    this.categories = const [],
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  CategoryListState copyWith({
+    List<CategoryModel>? categories,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return CategoryListState(
+      categories: categories ?? this.categories,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+class CategoryListNotifier extends StateNotifier<CategoryListState> {
+  CategoryListNotifier({ProductRepository? repository})
+    : _repository = repository ?? ProductRepository(),
+      super(const CategoryListState());
+
+  final ProductRepository _repository;
+
+  Future<void> fetchCategories() async {
+    if (state.isLoading) return;
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final categories = await _repository.getCategories();
+      state = CategoryListState(
+        categories: categories,
+      );
+    } on ApiException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Không thể tải danh mục: ${e.toString()}',
+      );
+    }
+  }
+}
+
+final categoryListProvider =
+    StateNotifierProvider<CategoryListNotifier, CategoryListState>(
+      (ref) => CategoryListNotifier(),
     );
 
 // ═══════════════════════════════════════════

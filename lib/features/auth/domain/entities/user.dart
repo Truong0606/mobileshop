@@ -24,6 +24,24 @@ class User extends Equatable {
   /// Whether this user has the Customer role.
   bool get isCustomer => role.toLowerCase() == 'customer';
 
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? avatarUrl,
+    String? role,
+    DateTime? createdAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   /// Whether this user has the BusinessOwner role.
   bool get isBusinessOwner => role.toLowerCase() == 'businessowner';
 

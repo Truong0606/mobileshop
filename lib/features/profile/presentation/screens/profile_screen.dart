@@ -66,25 +66,25 @@ class ProfileScreen extends ConsumerWidget {
                         Icons.receipt_long_outlined,
                         'Đơn mua',
                         isDark,
-                        onTap: () => context.goNamed('orders'),
+                        onTap: () => context.pushNamed('orders'),
                       ),
                       _menuItem(
                         Icons.favorite_border_rounded,
                         'Yêu thích',
                         isDark,
-                        onTap: () => context.goNamed('wishlist'),
+                        onTap: () => context.pushNamed('wishlist'),
                       ),
                       _menuItem(
                         Icons.location_on_outlined,
                         'Địa chỉ',
                         isDark,
-                        onTap: () {},
+                        onTap: () => context.pushNamed('addresses'),
                       ),
                       _menuItem(
                         Icons.payment_rounded,
                         'Phương thức thanh toán',
                         isDark,
-                        onTap: () {},
+                        onTap: () => context.pushNamed('paymentMethods'),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -101,12 +101,13 @@ class ProfileScreen extends ConsumerWidget {
                       'Ngôn ngữ',
                       isDark,
                       subtitle: 'Tiếng Việt',
+                      onTap: () => context.pushNamed('language'),
                     ),
                     _menuItem(
                       Icons.notifications_outlined,
                       'Thông báo',
                       isDark,
-                      onTap: () {},
+                      onTap: () => context.pushNamed('notificationsSettings'),
                     ),
 
                     const SizedBox(height: 16),
@@ -115,13 +116,13 @@ class ProfileScreen extends ConsumerWidget {
                       Icons.help_outline_rounded,
                       'Trung tâm trợ giúp',
                       isDark,
-                      onTap: () {},
+                      onTap: () => context.pushNamed('helpCenter'),
                     ),
                     _menuItem(
                       Icons.info_outline_rounded,
                       'Về ứng dụng',
                       isDark,
-                      onTap: () {},
+                      onTap: () => context.pushNamed('aboutApp'),
                     ),
 
                     if (authState.isLoggedIn)
@@ -175,11 +176,11 @@ class ProfileScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  _headerIcon(Icons.settings_outlined, () {}),
+                  _headerIcon(Icons.settings_outlined, () => context.pushNamed('settings')),
                   const SizedBox(width: 12),
                   _headerIcon(Icons.shopping_cart_outlined, () {}),
                   const SizedBox(width: 12),
-                  _headerIcon(Icons.chat_outlined, () => context.goNamed('chatList')),
+                  _headerIcon(Icons.chat_outlined, () => context.pushNamed('chatList')),
                 ],
               ),
               const SizedBox(height: 16),
@@ -349,7 +350,7 @@ class ProfileScreen extends ConsumerWidget {
 
         // Edit profile
         GestureDetector(
-          onTap: () => context.goNamed('editProfile'),
+          onTap: () => context.pushNamed('editProfile'),
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(

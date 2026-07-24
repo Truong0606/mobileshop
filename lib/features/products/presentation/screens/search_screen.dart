@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -27,9 +28,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Load products and images when screen opens
+    // Load products, variants, categories, and images when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(productListProvider.notifier).fetchProducts(pageSize: 50);
+      ref.read(variantListProvider.notifier).fetchVariants();
+      ref.read(categoryListProvider.notifier).fetchCategories();
       ref.read(imageMapProvider.notifier).fetchAllImages();
     });
   }
@@ -44,13 +47,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final productState = ref.watch(productListProvider);
+    final variantState = ref.watch(variantListProvider);
+    final categoryState = ref.watch(categoryListProvider);
     final imageMap = ref.watch(imageMapProvider);
 
-    // Extract unique categories from products
+    // Extract categories from API
     final categories = ['All'];
-    for (final p in productState.products) {
-      if (!categories.contains(p.categoryName)) {
-        categories.add(p.categoryName);
+    if (!categoryState.isLoading && categoryState.categories.isNotEmpty) {
+      categories.addAll(categoryState.categories.map((c) => c.name));
+    }
+
+    // Map product ID to min variant price for O(1) lookup
+    final Map<int, double> productMinPrices = {};
+    for (final v in variantState.variants) {
+      if (!productMinPrices.containsKey(v.productId) || v.price < productMinPrices[v.productId]!) {
+        productMinPrices[v.productId] = v.price.toDouble();
       }
     }
 
@@ -62,8 +73,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           p.brand.toLowerCase().contains(searchQuery);
       final matchesCategory =
           _selectedCategory == 'All' || p.categoryName == _selectedCategory;
-      // We don't have direct price on ProductModel (it's on Variant), so price filtering is rough
-      return matchesSearch && matchesCategory;
+      
+      final minPrice = productMinPrices[p.id] ?? 0;
+      final matchesPrice = minPrice >= _priceRange.start && minPrice <= _priceRange.end;
+
+      return matchesSearch && matchesCategory && matchesPrice;
     }).toList();
 
     return Scaffold(
@@ -197,7 +211,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       itemBuilder: (context, index) {
                         final p = filteredProducts[index];
                         final thumbnail = imageMap.getProductThumbnail(p.id);
-                        return _buildProductTile(context, p, thumbnail, isDark);
+                        final minPrice = productMinPrices[p.id] ?? 0;
+                        return _buildProductTile(context, p, thumbnail, minPrice, isDark);
                       },
                     ),
             ),
@@ -256,8 +271,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildProductTile(
     BuildContext context,
-    dynamic p,
+    ProductModel p,
     String? thumbnail,
+    double minPrice,
     bool isDark,
   ) {
     return GestureDetector(
@@ -316,7 +332,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 2),
                     Text(
                       p.name,
                       maxLines: 2,
@@ -327,6 +342,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         color: isDark
                             ? AppColors.darkOnSurface
                             : AppColors.lightOnSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      minPrice > 0 ? PriceFormatter.formatVNDDouble(minPrice) : '0₫',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
