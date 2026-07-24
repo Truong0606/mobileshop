@@ -93,7 +93,7 @@ class ChatRepository {
     try {
       final queryParams = {
         'limit': limit,
-        if (lastCursor != null) 'lastCursor': lastCursor,
+        ?'lastCursor': lastCursor,
       };
 
       final response = await _dio.get(
