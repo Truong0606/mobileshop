@@ -23,7 +23,7 @@ class ChatRepository {
   ) async {
     try {
       final response = await _dio.post(
-        '/chat/nessages',
+        '/chat/messages',
         data: command.toJson(),
       );
       final data = response.data['data'] ?? response.data;
