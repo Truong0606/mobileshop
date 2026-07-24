@@ -8,6 +8,7 @@ import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/empty_state_widget.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -228,28 +229,12 @@ class ChatListScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, st) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.construction_rounded, size: 48, color: Colors.orange[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          e.toString().replaceAll('ServerException: ', '').replaceAll('Exception: ', ''),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
-                        ),
-                        const SizedBox(height: 16),
-                        TextButton.icon(
-                          onPressed: () => ref.read(conversationListProvider.notifier).refresh(),
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: Text('Thử lại', style: GoogleFonts.inter()),
-                        ),
-                      ],
-                    ),
-                  ),
+                error: (e, st) => EmptyStateWidget(
+                  icon: Icons.wifi_off_rounded,
+                  title: 'Không thể tải dữ liệu',
+                  message: 'Hệ thống AI đang bảo trì hoặc mất kết nối mạng. Vui lòng thử lại sau.',
+                  buttonText: 'Thử lại',
+                  onButtonPressed: () => ref.read(conversationListProvider.notifier).refresh(),
                 ),
               ),
             ),

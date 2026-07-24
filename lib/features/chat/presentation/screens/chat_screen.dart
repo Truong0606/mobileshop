@@ -9,6 +9,7 @@ import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_mo
 import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
 import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/typing_indicator.dart';
 import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/rich_text_message.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/empty_state_widget.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chatId});
@@ -107,22 +108,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.construction_rounded, size: 48, color: Colors.orange[400]),
-                      const SizedBox(height: 16),
-                      Text(
-                        e.toString().replaceAll('ServerException: ', '').replaceAll('Exception: ', ''),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (e, st) => EmptyStateWidget(
+                icon: Icons.error_outline_rounded,
+                title: 'Lỗi tải tin nhắn',
+                message: 'Hệ thống AI đang bảo trì hoặc mất kết nối mạng. Vui lòng thử lại sau.',
+                buttonText: 'Thử lại',
+                onButtonPressed: () {
+                  ref.refresh(chatMessagesProvider(widget.chatId));
+                },
               ),
             ),
           ),
