@@ -13,9 +13,14 @@ import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 import 'package:smart_shopping_chatbot/shared/providers/wishlist_provider.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
-  const ProductDetailScreen({super.key, required this.productId});
+  const ProductDetailScreen({
+    super.key,
+    required this.productId,
+    this.initialVariant,
+  });
 
   final String productId;
+  final VariantModel? initialVariant;
 
   @override
   ConsumerState<ProductDetailScreen> createState() =>
@@ -24,6 +29,12 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   VariantModel? _selectedVariant;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedVariant = widget.initialVariant;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +64,15 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _selectedVariant = variants.first);
       });
+    } else if (_selectedVariant != null && variants.isNotEmpty) {
+      // Ensure _selectedVariant points to the same reference in the loaded variants list
+      // so that UI updates correctly (like border selection) based on equality.
+      final matchingVariant = variants.where((v) => v.id == _selectedVariant!.id).firstOrNull;
+      if (matchingVariant != null && !identical(_selectedVariant, matchingVariant)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _selectedVariant = matchingVariant);
+        });
+      }
     }
 
     final displayPrice = _selectedVariant?.price ?? 0.0;

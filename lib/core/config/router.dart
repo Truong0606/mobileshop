@@ -25,6 +25,7 @@ import 'package:smart_shopping_chatbot/features/profile/presentation/screens/lan
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/notifications_settings_screen.dart';
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/help_center_screen.dart';
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/about_app_screen.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 
 // ---------------------------------------------------------------------------
 // Navigation keys — used to preserve navigator state per branch.
@@ -122,7 +123,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final productId = state.pathParameters['id']!;
-          return ProductDetailScreen(productId: productId);
+          final initialVariant = state.extra as VariantModel?;
+          return ProductDetailScreen(
+            productId: productId,
+            initialVariant: initialVariant,
+          );
         },
       ),
 
