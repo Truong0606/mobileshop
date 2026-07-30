@@ -55,7 +55,7 @@ class ProductListNotifier extends StateNotifier<ProductListState> {
 
   final ProductRepository _repository;
 
-  Future<void> fetchProducts({int pageSize = 10}) async {
+  Future<void> fetchProducts({int pageSize = 100}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final response = await _repository.getProducts(
@@ -78,7 +78,7 @@ class ProductListNotifier extends StateNotifier<ProductListState> {
     }
   }
 
-  Future<void> loadMore({int pageSize = 10}) async {
+  Future<void> loadMore({int pageSize = 100}) async {
     if (state.isLoading || !state.hasMore) return;
     state = state.copyWith(isLoading: true);
     try {
@@ -223,7 +223,7 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
 
   final ProductRepository _repository;
 
-  Future<void> fetchVariants({int pageSize = 20}) async {
+  Future<void> fetchVariants({int pageSize = 100}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final response = await _repository.getVariants(
@@ -246,7 +246,7 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
     }
   }
 
-  Future<void> loadMore({int pageSize = 20}) async {
+  Future<void> loadMore({int pageSize = 100}) async {
     if (state.isLoading || !state.hasMore) return;
     state = state.copyWith(isLoading: true);
     try {
