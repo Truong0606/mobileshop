@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 
 class RichTextMessage extends ConsumerWidget {
