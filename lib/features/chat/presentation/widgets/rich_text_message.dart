@@ -108,7 +108,7 @@ class RichTextMessage extends ConsumerWidget {
                   final searchLower = alt.toLowerCase();
                   
                   final match = variants.where((v) {
-                    final nameLower = v.name.toLowerCase();
+                    final nameLower = v.productName.toLowerCase();
                     return nameLower.contains(searchLower) || searchLower.contains(nameLower);
                   }).firstOrNull;
 

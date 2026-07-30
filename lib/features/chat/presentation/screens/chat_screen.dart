@@ -94,7 +94,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               }
             }
           },
-          localeId: 'vi_VN',
         );
       } else {
         if (mounted) {
