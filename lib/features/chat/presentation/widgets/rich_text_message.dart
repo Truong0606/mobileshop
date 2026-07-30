@@ -107,10 +107,26 @@ class RichTextMessage extends ConsumerWidget {
                   final variants = ref.read(variantListProvider).variants;
                   final searchLower = alt.toLowerCase();
                   
-                  final match = variants.where((v) {
-                    final nameLower = v.productName.toLowerCase();
-                    return nameLower.contains(searchLower) || searchLower.contains(nameLower);
-                  }).firstOrNull;
+                  // 1. Try to find the exact variant by Image URL
+                  VariantModel? match = variants.where((v) => v.imageUrls.contains(src)).firstOrNull;
+
+                  // 2. Fallback to exact variant name
+                  if (match == null && alt.isNotEmpty) {
+                    match = variants.where((v) => v.variantName.toLowerCase() == searchLower).firstOrNull;
+                  }
+
+                  // 3. Fallback to exact product name
+                  if (match == null && alt.isNotEmpty) {
+                    match = variants.where((v) => v.productName.toLowerCase() == searchLower).firstOrNull;
+                  }
+
+                  // 4. Fallback to partial name match
+                  if (match == null && alt.isNotEmpty) {
+                    match = variants.where((v) {
+                      final nameLower = v.productName.toLowerCase();
+                      return nameLower.contains(searchLower) || searchLower.contains(nameLower);
+                    }).firstOrNull;
+                  }
 
                   if (match != null) {
                     context.pushNamed(
