@@ -34,8 +34,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _onScroll() {
-    // Ngưỡng 50px từ top để load tin cũ (endless scrolling)
-    if (_scrollController.position.pixels <= 50) {
+    // Với reverse: true, "trên cùng" (tin cũ nhất) là maxScrollExtent
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
       ref.read(chatMessagesProvider(widget.chatId).notifier).loadMore();
     }
   }
@@ -59,8 +59,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
+        // reverse: true nghĩa là dưới cùng màn hình có pixels = 0.0
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -125,12 +126,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   return const Center(child: Text('No messages.'));
                 }
 
+                final reversedMessages = messages.reversed.toList();
+
                 return ListView.builder(
+                  reverse: true,
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  itemCount: messages.length + (notifier.isLoadingMore ? 1 : 0) + (notifier.isTyping ? 1 : 0),
+                  itemCount: reversedMessages.length + (notifier.isLoadingMore ? 1 : 0) + (notifier.isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (notifier.isLoadingMore && index == 0) {
+                    // index 0 là dưới cùng màn hình (tin mới nhất) do reverse = true
+                    
+                    if (notifier.isTyping && index == 0) {
+                      return TypingIndicator(isDark: isDark);
+                    }
+
+                    final lastIndex = reversedMessages.length + (notifier.isLoadingMore ? 1 : 0) + (notifier.isTyping ? 1 : 0) - 1;
+                    if (notifier.isLoadingMore && index == lastIndex) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(8.0),
@@ -139,13 +150,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       );
                     }
 
-                    final totalMsgCount = messages.length + (notifier.isLoadingMore ? 1 : 0);
-                    if (notifier.isTyping && index == totalMsgCount) {
-                      return TypingIndicator(isDark: isDark);
-                    }
-
-                    final msgIndex = notifier.isLoadingMore ? index - 1 : index;
-                    final msg = messages[msgIndex];
+                    final msgIndex = index - (notifier.isTyping ? 1 : 0);
+                    final msg = reversedMessages[msgIndex];
                     return _buildMessageBubble(context, msg, isDark);
                   },
                 );
