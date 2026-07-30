@@ -45,6 +45,7 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   flutter_widget_from_html: ^0.17.2
   markdown: ^7.3.1
+  speech_to_text: ^7.4.0
 
 dev_dependencies:
   flutter_test:

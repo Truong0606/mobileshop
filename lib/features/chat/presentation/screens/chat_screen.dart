@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/chat/data/models/conversation_model.dart';
@@ -23,6 +24,8 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -63,6 +66,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
       }
     });
+  }
+
+  void _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (val) {
+          if (val == 'done' || val == 'notListening') {
+            if (mounted) setState(() => _isListening = false);
+          }
+        },
+        onError: (val) {
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+      if (available) {
+        if (mounted) setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) {
+            if (mounted) {
+              setState(() {
+                _controller.text = val.recognizedWords;
+              });
+              if (val.finalResult) {
+                // Auto send when speech is complete
+                _sendMessage();
+              }
+            }
+          },
+          localeId: 'vi_VN',
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không thể truy cập Microphone.')),
+          );
+        }
+      }
+    } else {
+      if (mounted) setState(() => _isListening = false);
+      _speech.stop();
+    }
   }
 
   @override
@@ -293,6 +337,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 maxLines: 1,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _listen,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _isListening
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : (isDark
+                        ? AppColors.darkSurfaceContainer
+                        : AppColors.lightSurfaceVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                _isListening ? Icons.mic : Icons.mic_none,
+                color: _isListening
+                    ? Colors.red
+                    : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+                size: 20,
               ),
             ),
           ),
