@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
+import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 
-class RichTextMessage extends StatelessWidget {
+class RichTextMessage extends ConsumerWidget {
   final String text;
   final bool isDark;
   final bool isUser;
@@ -17,7 +21,7 @@ class RichTextMessage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // 1. Chuyển đổi Markdown -> HTML
     // Sử dụng githubFlavored để hỗ trợ table, strikethrough, autolink...
     final htmlData = md.markdownToHtml(
@@ -92,7 +96,50 @@ class RichTextMessage extends StatelessWidget {
         ),
       // Giới hạn chiều rộng ảnh hoặc custom widget nếu cần
       customWidgetBuilder: (element) {
-        // Có thể bổ sung chặn custom widget ở đây
+        if (element.localName == 'img') {
+          final src = element.attributes['src'] ?? '';
+          final alt = element.attributes['alt'] ?? '';
+
+          if (src.isNotEmpty) {
+            return GestureDetector(
+              onTap: () {
+                if (alt.isNotEmpty) {
+                  final variants = ref.read(variantListProvider).variants;
+                  final searchLower = alt.toLowerCase();
+                  
+                  final match = variants.where((v) {
+                    final nameLower = v.name.toLowerCase();
+                    return nameLower.contains(searchLower) || searchLower.contains(nameLower);
+                  }).firstOrNull;
+
+                  if (match != null) {
+                    context.pushNamed(
+                      'productDetail',
+                      pathParameters: {'id': match.productId.toString()},
+                      extra: match,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Không tìm thấy thông tin sản phẩm.')),
+                    );
+                  }
+                }
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: src,
+                  placeholder: (context, url) => const SizedBox(
+                    height: 150,
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            );
+          }
+        }
         return null;
       },
     );
