@@ -56,11 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Quick Actions ──
               SliverToBoxAdapter(child: _buildQuickActions(context, isDark)),
 
-              // ── Categories ──
-              SliverToBoxAdapter(
-                child: _buildSectionTitle(context, 'Danh mục', onTap: () => context.goNamed('search')),
-              ),
-              SliverToBoxAdapter(child: _buildCategories(context, isDark)),
+
 
               // ── Products Showcase (from Variants API) ──
               SliverToBoxAdapter(
