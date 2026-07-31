@@ -74,7 +74,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       bool available = await _speech.initialize(
         onStatus: (val) {
           if (val == 'done' || val == 'notListening') {
-            if (mounted) setState(() => _isListening = false);
+            if (mounted) {
+              setState(() => _isListening = false);
+              // Auto-send khi speech kết thúc và có text
+              final text = _controller.text.trim();
+              if (text.isNotEmpty) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) _sendMessage();
+                });
+              }
+            }
           }
         },
         onError: (val) {
@@ -89,10 +98,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               setState(() {
                 _controller.text = val.recognizedWords;
               });
-              if (val.finalResult) {
-                // Auto send when speech is complete
-                _sendMessage();
-              }
             }
           },
         );
