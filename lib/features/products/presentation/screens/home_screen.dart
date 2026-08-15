@@ -303,14 +303,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Icons.compare_arrows_rounded,
         AppColors.secondary,
       ),
-      _QuickAction('Khuyến mãi', Icons.local_offer_rounded, AppColors.warning),
-      _QuickAction('Mới', Icons.fiber_new_rounded, AppColors.info),
     ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: actions.map((action) {
           return GestureDetector(
             onTap: () {

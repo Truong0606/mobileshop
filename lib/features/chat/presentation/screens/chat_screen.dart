@@ -13,9 +13,10 @@ import 'package:smart_shopping_chatbot/features/chat/presentation/widgets/rich_t
 import 'package:smart_shopping_chatbot/shared/widgets/empty_state_widget.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.chatId});
+  const ChatScreen({super.key, required this.chatId, this.initialMessage});
 
   final String chatId;
+  final String? initialMessage;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -27,10 +28,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
 
+  bool _initialMessageSent = false;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // Auto-send initialMessage after first frame
+    if (widget.initialMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_initialMessageSent && widget.initialMessage != null) {
+          _initialMessageSent = true;
+          ref
+              .read(chatMessagesProvider(widget.chatId).notifier)
+              .sendMessage(widget.initialMessage!);
+          _scrollToBottom();
+        }
+      });
+    }
   }
 
   void _onScroll() {

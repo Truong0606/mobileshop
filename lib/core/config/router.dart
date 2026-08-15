@@ -114,7 +114,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final chatId = state.pathParameters['id']!;
-          return ChatScreen(chatId: chatId);
+          final initialMessage = state.extra as String?;
+          return ChatScreen(chatId: chatId, initialMessage: initialMessage);
         },
       ),
 
