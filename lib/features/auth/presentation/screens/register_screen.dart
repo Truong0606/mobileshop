@@ -261,59 +261,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
             ),
 
-            const SizedBox(height: 28),
-
-            // ── Divider ──
-            Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    color: isDark
-                        ? AppColors.dividerDark
-                        : AppColors.dividerLight,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'HOẶC',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? AppColors.darkOnSurfaceVariant
-                          : AppColors.lightOnSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Divider(
-                    color: isDark
-                        ? AppColors.dividerDark
-                        : AppColors.dividerLight,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── Social Register Buttons ──
-            _socialButton(
-              'Đăng ký bằng Google',
-              'G',
-              const Color(0xFFDB4437),
-              isDark,
-            ),
-            const SizedBox(height: 12),
-            _socialButton(
-              'Đăng ký bằng Facebook',
-              'f',
-              const Color(0xFF1877F2),
-              isDark,
-            ),
-
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
 
             // ── Login link ──
             Row(
@@ -345,67 +293,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ],
             ),
             const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _socialButton(
-    String text,
-    String iconText,
-    Color iconColor,
-    bool isDark,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        _nameController.text = 'Smart User';
-        _emailController.text = 'smartuser@gmail.com';
-        _passwordController.text = '123456';
-        _handleRegister();
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: iconColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  iconText,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isDark
-                    ? AppColors.darkOnSurface
-                    : AppColors.lightOnSurface,
-              ),
-            ),
           ],
         ),
       ),
