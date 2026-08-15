@@ -200,7 +200,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               RadioListTile<String>(
                 title: const Text('Thanh toán khi nhận hàng (COD)'),
                 value: 'COD',
+                // ignore: deprecated_member_use
                 groupValue: _selectedPaymentMethod,
+                // ignore: deprecated_member_use
                 onChanged: (val) {
                   // Chỉ giả lập chọn, api hiện tại bắt buộc payos
                   if(val != null) setState(() => _selectedPaymentMethod = val);
@@ -209,7 +211,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               RadioListTile<String>(
                 title: const Text('Thanh toán qua PayOS (QR Code)'),
                 value: 'VNPAY', // Đặt giả là VNPAY do PayOS hỗ trợ QR
+                // ignore: deprecated_member_use
                 groupValue: _selectedPaymentMethod,
+                // ignore: deprecated_member_use
                 onChanged: (val) {
                   if(val != null) setState(() => _selectedPaymentMethod = val);
                 },
@@ -268,7 +272,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   child: CachedNetworkImage(
                     imageUrl: imageUrl,
                     fit: BoxFit.cover,
-                    errorWidget: (_,__,___) => const Icon(Icons.image, color: Colors.grey),
+                    errorWidget: (context, url, error) => const Icon(Icons.image, color: Colors.grey),
                   ),
                 )
               : const Icon(Icons.image, color: Colors.grey),

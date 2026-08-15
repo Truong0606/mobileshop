@@ -208,7 +208,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                                   child: CachedNetworkImage(
                                     imageUrl: item.imageUrl!,
                                     fit: BoxFit.cover,
-                                    errorWidget: (_,__,___) => const Icon(Icons.image, color: Colors.grey),
+                                    errorWidget: (context, url, error) => const Icon(Icons.image, color: Colors.grey),
                                   ),
                                 )
                               : const Icon(Icons.image, color: Colors.grey),

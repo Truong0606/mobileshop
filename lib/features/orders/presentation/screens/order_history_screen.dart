@@ -117,7 +117,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: filteredOrders.length + (orderState.hasMore ? 1 : 0),
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           if (index == filteredOrders.length) {
             // Reached the end, load more
