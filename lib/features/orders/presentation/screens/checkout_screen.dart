@@ -11,6 +11,7 @@ import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/payment_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/order_provider.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -37,43 +38,70 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Đóng bàn phím
     FocusScope.of(context).unfocus();
 
-    final url = await ref.read(paymentProvider.notifier).checkout(
-      receiverName: _nameController.text.trim(),
-      receiverPhone: _phoneController.text.trim(),
-      shippingAddress: _addressController.text.trim(),
-      // PayOS redirect settings
-      returnUrl: 'https://shopfake-rag-demo.vercel.app/payment-result', 
-      cancelUrl: 'https://shopfake-rag-demo.vercel.app/payment-result',
-    );
+    try {
+      final url = await ref.read(paymentProvider.notifier).checkout(
+        receiverName: _nameController.text.trim(),
+        receiverPhone: _phoneController.text.trim(),
+        shippingAddress: _addressController.text.trim(),
+        returnUrl: 'https://shopfake-rag-demo.vercel.app/payment-result', 
+        cancelUrl: 'https://shopfake-rag-demo.vercel.app/payment-result',
+      );
 
-    if (url != null) {
-      // Mở in-app browser
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.inAppWebView);
-        // Sau khi browser đóng, tự động refresh giỏ hàng và đơn hàng
-        ref.read(cartProvider.notifier).fetchCart();
-        if (mounted) {
-          context.goNamed('orders');
-        }
-      } else {
+      final error = ref.read(paymentProvider).error;
+      if (error != null) {
         if (mounted) {
           AppNotification.show(
             context,
-            message: 'Không thể mở trang thanh toán',
+            message: error,
             type: NotificationType.error,
           );
         }
+        return;
       }
-    } else {
-      final error = ref.read(paymentProvider).error;
-      if (mounted && error != null) {
+
+      if (url != null && url.isNotEmpty) {
+        // Mở URL PayOS thanh toán
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.inAppWebView);
+          ref.read(cartProvider.notifier).fetchCart();
+          ref.read(orderProvider.notifier).refresh();
+          if (mounted) {
+            context.goNamed('orders');
+          }
+        } else {
+          if (mounted) {
+            AppNotification.show(
+              context,
+              message: 'Không thể mở trang thanh toán',
+              type: NotificationType.error,
+            );
+          }
+        }
+      } else {
+        // Tạo đơn hàng thành công trực tiếp
+        ref.read(cartProvider.notifier).fetchCart();
+        ref.read(orderProvider.notifier).refresh();
+        if (mounted) {
+          AppNotification.show(
+            context,
+            message: 'Đặt hàng thành công!',
+            type: NotificationType.success,
+          );
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) {
+              context.goNamed('orders');
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         AppNotification.show(
           context,
-          message: error,
+          message: e.toString(),
           type: NotificationType.error,
         );
       }
