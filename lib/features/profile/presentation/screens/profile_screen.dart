@@ -186,19 +186,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _headerIcon(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: Colors.white, size: 20),
-      ),
-    );
-  }
 
   // ── Guest Header (Not Logged In) ──
   Widget _buildGuestHeader(BuildContext context) {
