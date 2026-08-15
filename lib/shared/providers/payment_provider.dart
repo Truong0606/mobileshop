@@ -36,6 +36,7 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
     required String shippingAddress,
     required String returnUrl,
     required String cancelUrl,
+    String? conversationId,
   }) async {
     state = state.copyWith(isLoading: true, error: null, paymentUrl: null);
     try {
@@ -45,6 +46,7 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
         shippingAddress: shippingAddress,
         returnUrl: returnUrl,
         cancelUrl: cancelUrl,
+        conversationId: conversationId,
       );
       state = state.copyWith(isLoading: false, paymentUrl: url);
       return url;

@@ -12,17 +12,20 @@ import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
+import 'package:smart_shopping_chatbot/core/utils/ai_tracking_storage.dart';
 
 class RichTextMessage extends ConsumerWidget {
   final String text;
   final bool isDark;
   final bool isUser;
+  final String? conversationId;
 
   const RichTextMessage({
     super.key,
     required this.text,
     required this.isDark,
     required this.isUser,
+    this.conversationId,
   });
 
   String? _addToCartSkuFromUrl(String url) {
@@ -69,6 +72,8 @@ class RichTextMessage extends ConsumerWidget {
         _showMessage(context, '${variant.productName} hiện đã hết hàng.', isError: true);
       } else {
         await ref.read(cartProvider).addToCart(variant.id, 1);
+        // Lưu lại conversationId để tracking chuyển đổi AI
+        await AiTrackingStorage.saveConversationId(conversationId);
         if (context.mounted) {
           _showMessage(context, 'Đã thêm ${variant.productName} vào giỏ hàng.');
         }
@@ -210,6 +215,7 @@ class RichTextMessage extends ConsumerWidget {
                   }
 
                   if (match != null) {
+                    AiTrackingStorage.saveConversationId(conversationId);
                     context.pushNamed(
                       'productDetail',
                       pathParameters: {'id': match.productId.toString()},

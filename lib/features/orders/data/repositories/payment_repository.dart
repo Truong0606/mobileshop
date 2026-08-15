@@ -12,16 +12,22 @@ class PaymentRepository {
     required String shippingAddress,
     required String returnUrl,
     required String cancelUrl,
+    String? conversationId,
   }) async {
+    final Map<String, dynamic> body = {
+      'receiverName': receiverName,
+      'receiverPhone': receiverPhone,
+      'shippingAddress': shippingAddress,
+      'returnUrl': returnUrl,
+      'cancelUrl': cancelUrl,
+    };
+    if (conversationId != null && conversationId.isNotEmpty) {
+      body['conversationId'] = conversationId;
+    }
+
     final response = await _apiClient.post(
       '/payments',
-      data: {
-        'receiverName': receiverName,
-        'receiverPhone': receiverPhone,
-        'shippingAddress': shippingAddress,
-        'returnUrl': returnUrl,
-        'cancelUrl': cancelUrl,
-      },
+      data: body,
     );
 
     final root = response.data;

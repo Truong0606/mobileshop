@@ -172,7 +172,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
                     final msgIndex = index - (notifier.isTyping ? 1 : 0);
                     final msg = reversedMessages[msgIndex];
-                    return _buildMessageBubble(context, msg, isDark);
+                    return _buildMessageBubble(
+                      context,
+                      msg,
+                      isDark,
+                      notifier.effectiveId,
+                    );
                   },
                 );
               },
@@ -245,6 +250,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     BuildContext context,
     ChatMessageModel message,
     bool isDark,
+    String? conversationId,
   ) {
     final senderLower = message.sender.toLowerCase();
     final isUser = senderLower == 'user' || senderLower == 'customer';
@@ -291,6 +297,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     text: message.content,
                     isDark: isDark,
                     isUser: isUser,
+                    conversationId: conversationId,
                   ),
           ),
           Padding(

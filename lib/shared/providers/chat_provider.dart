@@ -67,8 +67,9 @@ class ChatMessages extends _$ChatMessages {
   bool _isLoadingMore = false;
   bool _isTyping = false;
 
-  /// ID hội thoại thực tế (dùng cho API calls)
-  String get _effectiveId => _realConversationId ?? conversationId;
+  /// ID hội thoại thực tế (dùng cho API calls và AI conversion tracking)
+  String get effectiveId => _realConversationId ?? conversationId;
+  String get _effectiveId => effectiveId;
 
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;

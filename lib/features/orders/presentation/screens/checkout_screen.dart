@@ -10,6 +10,7 @@ import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/payment_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/order_provider.dart';
+import 'package:smart_shopping_chatbot/core/utils/ai_tracking_storage.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -39,13 +40,20 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     FocusScope.of(context).unfocus();
 
     try {
+      // Lấy conversationId từ storage (nếu người dùng mua từ AI Chat)
+      final conversationId = await AiTrackingStorage.getConversationId();
+
       final url = await ref.read(paymentProvider.notifier).checkout(
         receiverName: _nameController.text.trim(),
         receiverPhone: _phoneController.text.trim(),
         shippingAddress: _addressController.text.trim(),
         returnUrl: 'https://shopfake-rag-demo.vercel.app/payment-result', 
         cancelUrl: 'https://shopfake-rag-demo.vercel.app/payment-result',
+        conversationId: conversationId,
       );
+
+      // Xóa conversationId sau khi đã gửi đi
+      await AiTrackingStorage.clear();
 
       final error = ref.read(paymentProvider).error;
       if (error != null) {
