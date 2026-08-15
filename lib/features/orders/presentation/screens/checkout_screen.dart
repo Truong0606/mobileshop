@@ -64,8 +64,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (url != null && url.isNotEmpty) {
         // Mở URL PayOS thanh toán
         final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.inAppWebView);
+        bool launched = false;
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          try {
+            launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+          } catch (_) {
+            try {
+              launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+            } catch (_) {
+              launched = false;
+            }
+          }
+        }
+
+        if (launched) {
           ref.read(cartProvider.notifier).fetchCart();
           ref.read(orderProvider.notifier).refresh();
           if (mounted) {
@@ -75,7 +89,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           if (mounted) {
             AppNotification.show(
               context,
-              message: 'Không thể mở trang thanh toán',
+              message: 'Không thể mở trình duyệt thanh toán. Vui lòng thử lại.',
               type: NotificationType.error,
             );
           }
