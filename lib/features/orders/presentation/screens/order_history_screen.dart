@@ -100,9 +100,11 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen> {
       );
     }
 
-    final filteredOrders = filterStatus == null 
-        ? orderState.orders 
-        : orderState.orders.where((o) => o.status == filterStatus).toList();
+    final filteredOrders = filterStatus == null
+        ? orderState.orders
+        : orderState.orders
+            .where((o) => o.status.toUpperCase() == filterStatus.toUpperCase())
+            .toList();
 
     if (filteredOrders.isEmpty) {
       return RefreshIndicator(
@@ -144,22 +146,19 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen> {
   Widget _buildOrderItem(OrderModel order) {
     Color statusColor;
     String statusText;
-    switch (order.status) {
-      case 'PENDING':
-        statusColor = Colors.orange;
-        statusText = 'Chờ thanh toán';
-        break;
-      case 'PAID':
-        statusColor = Colors.green;
-        statusText = 'Đã thanh toán';
-        break;
-      case 'CANCELLED':
-        statusColor = Colors.red;
-        statusText = 'Đã hủy';
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusText = order.status;
+    final normStatus = order.status.toUpperCase();
+    if (normStatus == 'PAID') {
+      statusColor = AppColors.success;
+      statusText = 'Đã thanh toán';
+    } else if (normStatus == 'PENDING') {
+      statusColor = AppColors.warning;
+      statusText = 'Chờ thanh toán';
+    } else if (normStatus == 'CANCELLED') {
+      statusColor = AppColors.error;
+      statusText = 'Đã hủy';
+    } else {
+      statusColor = Colors.grey;
+      statusText = order.status;
     }
 
     // Format date
