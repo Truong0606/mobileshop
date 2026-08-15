@@ -23,6 +23,22 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
   List<VariantModel>? _variants2;
 
   @override
+  void initState() {
+    super.initState();
+    // Ensure products and variants are loaded
+    Future.microtask(() {
+      final productState = ref.read(productListProvider);
+      if (productState.products.isEmpty && !productState.isLoading) {
+        ref.read(productListProvider.notifier).fetchProducts();
+      }
+      final variantState = ref.read(variantListProvider);
+      if (variantState.variants.isEmpty && !variantState.isLoading) {
+        ref.read(variantListProvider.notifier).fetchVariants();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
