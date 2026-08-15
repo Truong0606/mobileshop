@@ -67,10 +67,19 @@ class ProductRepository {
   Future<PaginatedResponse<VariantModel>> getVariants({
     int pageIndex = 1,
     int pageSize = 10,
+    String? orderBy,
   }) async {
+    final queryParams = <String, dynamic>{
+      'pageIndex': pageIndex,
+      'pageSize': pageSize,
+    };
+    if (orderBy != null && orderBy.isNotEmpty) {
+      queryParams['orderBy'] = orderBy;
+    }
+
     final response = await _apiClient.get<Map<String, dynamic>>(
       '/variants',
-      queryParameters: {'pageIndex': pageIndex, 'pageSize': pageSize},
+      queryParameters: queryParams,
     );
 
     return PaginatedResponse.fromJson(response.data!, VariantModel.fromJson);

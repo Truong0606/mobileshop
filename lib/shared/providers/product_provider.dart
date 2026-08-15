@@ -185,6 +185,7 @@ class VariantListState {
   final int currentPage;
   final int totalPages;
   final bool hasMore;
+  final String? orderBy;
 
   const VariantListState({
     this.variants = const [],
@@ -193,6 +194,7 @@ class VariantListState {
     this.currentPage = 1,
     this.totalPages = 1,
     this.hasMore = true,
+    this.orderBy,
   });
 
   VariantListState copyWith({
@@ -202,7 +204,9 @@ class VariantListState {
     int? currentPage,
     int? totalPages,
     bool? hasMore,
+    String? orderBy,
     bool clearError = false,
+    bool clearOrderBy = false,
   }) {
     return VariantListState(
       variants: variants ?? this.variants,
@@ -211,6 +215,7 @@ class VariantListState {
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       hasMore: hasMore ?? this.hasMore,
+      orderBy: clearOrderBy ? null : (orderBy ?? this.orderBy),
     );
   }
 }
@@ -222,19 +227,24 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
       super(const VariantListState());
 
   final ProductRepository _repository;
+  String? _currentOrderBy;
+  String? get currentOrderBy => _currentOrderBy;
 
-  Future<void> fetchVariants({int pageSize = 100}) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  Future<void> fetchVariants({int pageSize = 100, String? orderBy}) async {
+    _currentOrderBy = orderBy;
+    state = state.copyWith(isLoading: true, clearError: true, orderBy: orderBy, clearOrderBy: orderBy == null);
     try {
       final response = await _repository.getVariants(
         pageIndex: 1,
         pageSize: pageSize,
+        orderBy: orderBy,
       );
       state = VariantListState(
         variants: response.items,
         currentPage: response.pageIndex,
         totalPages: response.totalPages,
         hasMore: response.hasMore,
+        orderBy: orderBy,
       );
     } on ApiException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
@@ -254,6 +264,7 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
       final response = await _repository.getVariants(
         pageIndex: nextPage,
         pageSize: pageSize,
+        orderBy: _currentOrderBy,
       );
       state = state.copyWith(
         variants: [...state.variants, ...response.items],
@@ -272,7 +283,7 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
     }
   }
 
-  Future<void> refresh() => fetchVariants();
+  Future<void> refresh() => fetchVariants(orderBy: _currentOrderBy);
 }
 
 /// Global variant list provider (showcase items with price, images, attributes).

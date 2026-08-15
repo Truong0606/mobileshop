@@ -19,6 +19,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchController = TextEditingController();
   String _selectedCategory = 'All';
+  String? _sortBy;
   RangeValues _priceRange = const RangeValues(
     0,
     5000000,
@@ -79,6 +80,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
       return matchesSearch && matchesCategory && matchesPrice;
     }).toList();
+
+    // Sort products based on _sortBy
+    if (_sortBy == 'price_asc') {
+      filteredProducts.sort((a, b) => (productMinPrices[a.id] ?? 0).compareTo(productMinPrices[b.id] ?? 0));
+    } else if (_sortBy == 'price_desc') {
+      filteredProducts.sort((a, b) => (productMinPrices[b.id] ?? 0).compareTo(productMinPrices[a.id] ?? 0));
+    } else if (_sortBy == 'name_asc') {
+      filteredProducts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (_sortBy == 'name_desc') {
+      filteredProducts.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -263,6 +275,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Sắp xếp',
+            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              {'label': 'Mặc định', 'value': null},
+              {'label': 'Giá: Thấp -> Cao', 'value': 'price_asc'},
+              {'label': 'Giá: Cao -> Thấp', 'value': 'price_desc'},
+              {'label': 'Tên A-Z', 'value': 'name_asc'},
+              {'label': 'Tên Z-A', 'value': 'name_desc'},
+            ].map((opt) {
+              final isSelected = _sortBy == opt['value'];
+              return ChoiceChip(
+                label: Text(
+                  opt['label'] as String,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: AppColors.primary,
+                backgroundColor: isDark
+                    ? AppColors.darkSurfaceVariant
+                    : AppColors.lightSurfaceVariant,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                  ),
+                ),
+                showCheckmark: false,
+                onSelected: (selected) {
+                  setState(() {
+                    _sortBy = selected ? opt['value'] : null;
+                  });
+                },
+              );
+            }).toList(),
           ),
         ],
       ),

@@ -64,6 +64,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _buildSectionTitle(context, 'Sản phẩm nổi bật', onTap: () => context.goNamed('search')),
               ),
 
+              // ── Sort / Filter Chips (orderBy API) ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSortChips(context, isDark, variantState.orderBy),
+                ),
+              ),
+
               // Loading / Error / Data
               if (variantState.isLoading && variantState.variants.isEmpty)
                 const SliverToBoxAdapter(
@@ -384,6 +392,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSortChips(BuildContext context, bool isDark, String? currentOrderBy) {
+    final sortOptions = [
+      {'label': 'Mới nhất', 'value': null},
+      {'label': 'Giá tăng dần', 'value': 'price_asc'},
+      {'label': 'Giá giảm dần', 'value': 'price_desc'},
+      {'label': 'Tên A-Z', 'value': 'name_asc'},
+      {'label': 'Tên Z-A', 'value': 'name_desc'},
+    ];
+
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: sortOptions.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final option = sortOptions[index];
+          final isSelected = currentOrderBy == option['value'];
+
+          return ChoiceChip(
+            label: Text(
+              option['label'] as String,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+              ),
+            ),
+            selected: isSelected,
+            selectedColor: AppColors.primary,
+            backgroundColor: isDark
+                ? AppColors.darkSurfaceVariant
+                : AppColors.lightSurfaceVariant,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+              ),
+            ),
+            showCheckmark: false,
+            onSelected: (selected) {
+              final newOrderBy = selected ? option['value'] : null;
+              ref.read(variantListProvider.notifier).fetchVariants(orderBy: newOrderBy);
+            },
+          );
+        },
       ),
     );
   }
