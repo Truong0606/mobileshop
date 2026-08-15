@@ -22,6 +22,13 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
   ProductModel? _product2;
   List<VariantModel>? _variants1;
   List<VariantModel>? _variants2;
+  final _purposeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _purposeController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -84,7 +91,66 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
             // ── Comparison Table (only when both products selected) ──
             if (_product1 != null && _product2 != null) ...[
               _buildComparisonTable(isDark),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // ── Mục đích so sánh input ──
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    width: 0.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.psychology_alt_outlined,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mục đích so sánh:',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _purposeController,
+                      decoration: InputDecoration(
+                        hintText: 'Nhập nhu cầu (vd: đi chơi hè, đi làm, tặng quà...)',
+                        hintStyle: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
+                        ),
+                        filled: true,
+                        fillColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
               // ── Ask AI button ──
               GestureDetector(
@@ -586,8 +652,10 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
   void _navigateToAICompare() {
     if (_product1 == null || _product2 == null) return;
 
-    final prompt =
-        'toi muon so sanh ${_product1!.name} va ${_product2!.name}';
+    final purpose = _purposeController.text.trim();
+    final prompt = purpose.isNotEmpty
+        ? 'Tôi muốn so sánh ${_product1!.name} và ${_product2!.name} với mục đích: $purpose'
+        : 'Tôi muốn so sánh ${_product1!.name} và ${_product2!.name}';
 
     context.pushNamed(
       'chat',
