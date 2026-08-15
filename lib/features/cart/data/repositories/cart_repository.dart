@@ -23,10 +23,28 @@ class CartRepository {
     );
   }
 
-  Future<CartItemModel> addToCart(int productVariantId, int quantity) async {
+  Future<CartItemModel> addToCart(
+    int productVariantId,
+    int quantity, {
+    String source = 'Product',
+    String? conversationId,
+  }) async {
+    final effectiveSource = (conversationId != null && conversationId.isNotEmpty)
+        ? 'Chat'
+        : source;
+
+    final Map<String, dynamic> body = {
+      'productVariantId': productVariantId,
+      'quantity': quantity,
+      'conversationId': (effectiveSource == 'Chat') ? conversationId : null,
+    };
+
     final response = await _apiClient.post(
       '/cart-items',
-      data: {'productVariantId': productVariantId, 'quantity': quantity},
+      queryParameters: {
+        'addToCartSource': effectiveSource,
+      },
+      data: body,
     );
 
     // The API might just return success or the updated cart item.
@@ -43,6 +61,8 @@ class CartRepository {
       productName: '',
       price: 0,
       quantity: quantity,
+      conversationId: (effectiveSource == 'Chat') ? conversationId : null,
+      source: effectiveSource,
     );
   }
 

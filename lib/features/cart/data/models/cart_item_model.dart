@@ -5,6 +5,8 @@ class CartItemModel {
   final String productName;
   final double price;
   final int quantity;
+  final String? conversationId;
+  final String? source;
 
   CartItemModel({
     required this.id,
@@ -13,6 +15,8 @@ class CartItemModel {
     required this.productName,
     required this.price,
     required this.quantity,
+    this.conversationId,
+    this.source,
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class CartItemModel {
       productName: json['productName'] as String? ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       quantity: json['quantity'] as int? ?? 0,
+      conversationId: json['conversationId'] as String?,
+      source: json['source'] as String?,
     );
   }
 
@@ -34,6 +40,8 @@ class CartItemModel {
       'productName': productName,
       'price': price,
       'quantity': quantity,
+      'conversationId': conversationId,
+      'source': source,
     };
   }
 
@@ -44,6 +52,8 @@ class CartItemModel {
     String? productName,
     double? price,
     int? quantity,
+    String? conversationId,
+    String? source,
   }) {
     return CartItemModel(
       id: id ?? this.id,
@@ -52,6 +62,8 @@ class CartItemModel {
       productName: productName ?? this.productName,
       price: price ?? this.price,
       quantity: quantity ?? this.quantity,
+      conversationId: conversationId ?? this.conversationId,
+      source: source ?? this.source,
     );
   }
 }

@@ -42,10 +42,20 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addToCart(int productVariantId, int quantity) async {
+  Future<void> addToCart(
+    int productVariantId,
+    int quantity, {
+    String source = 'Product',
+    String? conversationId,
+  }) async {
     _setLoading(true);
     try {
-      await _cartRepository.addToCart(productVariantId, quantity);
+      await _cartRepository.addToCart(
+        productVariantId,
+        quantity,
+        source: source,
+        conversationId: conversationId,
+      );
       await fetchCart(); // Refresh cart to get accurate server state
     } catch (e) {
       _error = e.toString();

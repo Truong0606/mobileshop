@@ -71,7 +71,12 @@ class RichTextMessage extends ConsumerWidget {
       } else if (!variant.isActive || !variant.inStock) {
         _showMessage(context, '${variant.productName} hiện đã hết hàng.', isError: true);
       } else {
-        await ref.read(cartProvider).addToCart(variant.id, 1);
+        await ref.read(cartProvider).addToCart(
+          variant.id,
+          1,
+          source: 'Chat',
+          conversationId: conversationId,
+        );
         // Lưu lại conversationId để tracking chuyển đổi AI
         await AiTrackingStorage.saveConversationId(conversationId);
         if (context.mounted) {

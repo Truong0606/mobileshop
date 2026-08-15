@@ -634,7 +634,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       try {
         await ref
             .read(cartProvider.notifier)
-            .addToCart(_selectedVariant!.id, 1);
+            .addToCart(
+              _selectedVariant!.id,
+              1,
+              source: 'Product',
+              conversationId: null,
+            );
         if (mounted) {
           AppNotification.show(
             context,
