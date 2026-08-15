@@ -7,6 +7,7 @@ import 'package:smart_shopping_chatbot/l10n/app_localizations.dart';
 import 'package:smart_shopping_chatbot/core/config/router.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_theme.dart';
 import 'package:smart_shopping_chatbot/shared/providers/theme_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/locale_provider.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -15,11 +16,13 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 'Smart Shopping',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
+      locale: locale,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,

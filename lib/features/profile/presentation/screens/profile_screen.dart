@@ -7,6 +7,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/theme_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/order_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/wishlist_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/chat_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/locale_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -15,6 +19,15 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
+    final locale = ref.watch(localeProvider);
+
+    final orderCount = ref.watch(orderProvider).orders.length;
+    final wishlistCount = ref.watch(wishlistProvider).length;
+    final conversationsState = ref.watch(conversationListProvider);
+    final chatCount = conversationsState.maybeWhen(
+      data: (list) => list.length,
+      orElse: () => 0,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -40,20 +53,28 @@ class ProfileScreen extends ConsumerWidget {
                       Row(
                         children: [
                           _statCard(
-                            '12',
+                            '$orderCount',
                             'Đơn hàng',
                             Icons.shopping_bag_rounded,
                             isDark,
+                            onTap: () => context.pushNamed('orders'),
                           ),
                           const SizedBox(width: 12),
                           _statCard(
-                            '5',
+                            '$wishlistCount',
                             'Yêu thích',
                             Icons.favorite_rounded,
                             isDark,
+                            onTap: () => context.pushNamed('wishlist'),
                           ),
                           const SizedBox(width: 12),
-                          _statCard('28', 'Chat', Icons.chat_rounded, isDark),
+                          _statCard(
+                            '$chatCount',
+                            'Chat',
+                            Icons.chat_rounded,
+                            isDark,
+                            onTap: () => context.goNamed('chatList'),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -100,7 +121,7 @@ class ProfileScreen extends ConsumerWidget {
                       Icons.language_rounded,
                       'Ngôn ngữ',
                       isDark,
-                      subtitle: 'Tiếng Việt',
+                      subtitle: locale.languageCode == 'en' ? 'English (US)' : 'Tiếng Việt',
                       onTap: () => context.pushNamed('language'),
                     ),
                     _menuItem(
@@ -446,42 +467,51 @@ class ProfileScreen extends ConsumerWidget {
   // ─────────────────────────────────────────
   // Stat Cards
   // ─────────────────────────────────────────
-  Widget _statCard(String value, String label, IconData icon, bool isDark) {
+  Widget _statCard(
+    String value,
+    String label,
+    IconData icon,
+    bool isDark, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-            width: 0.5,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              width: 0.5,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.primary, size: 22),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.darkOnSurface
-                    : AppColors.lightOnSurface,
+          child: Column(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.darkOnSurface
+                      : AppColors.lightOnSurface,
+                ),
               ),
-            ),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: isDark
-                    ? AppColors.darkOnSurfaceVariant
-                    : AppColors.lightOnSurfaceVariant,
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: isDark
+                      ? AppColors.darkOnSurfaceVariant
+                      : AppColors.lightOnSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
