@@ -8,7 +8,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/features/orders/data/models/order_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/order_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final String orderIdStr;
@@ -26,6 +28,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   void initState() {
     super.initState();
     _loadOrder();
+    Future.microtask(() {
+      ref.read(variantListProvider.notifier).fetchVariants();
+      ref.read(imageMapProvider.notifier).fetchAllImages();
+    });
   }
 
   void _loadOrder() {
@@ -533,6 +539,42 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         : item.productName;
     final itemTotal = item.price * item.quantity;
 
+    final variantState = ref.watch(variantListProvider);
+    final imageMap = ref.watch(imageMapProvider);
+
+    String? imageUrl = item.imageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      final name = displayName.toLowerCase().trim();
+      VariantModel? matched;
+      for (final v in variantState.variants) {
+        final vName = v.variantName.toLowerCase().trim();
+        final pName = v.productName.toLowerCase().trim();
+        if (vName == name ||
+            '$pName - $vName' == name ||
+            '$pName $vName' == name) {
+          matched = v;
+          break;
+        }
+      }
+      if (matched == null) {
+        for (final v in variantState.variants) {
+          final vName = v.variantName.toLowerCase().trim();
+          final pName = v.productName.toLowerCase().trim();
+          if ((vName.isNotEmpty && name.contains(vName)) ||
+              (pName.isNotEmpty && name.contains(pName))) {
+            matched = v;
+            break;
+          }
+        }
+      }
+
+      if (matched != null) {
+        imageUrl = matched.imageUrls.isNotEmpty
+            ? matched.imageUrls.first
+            : imageMap.getProductThumbnail(matched.productId);
+      }
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -545,11 +587,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                 : AppColors.lightSurfaceVariant,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+          child: imageUrl != null && imageUrl.isNotEmpty
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: CachedNetworkImage(
-                    imageUrl: item.imageUrl!,
+                    imageUrl: imageUrl,
                     fit: BoxFit.cover,
                     errorWidget: (_, _, _) => const Icon(
                       Icons.shopping_bag_outlined,
