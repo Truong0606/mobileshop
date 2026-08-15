@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/product_model.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 
@@ -25,8 +26,21 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure products and variants are loaded
     Future.microtask(() {
+      // Check login
+      final authState = ref.read(authProvider);
+      if (!authState.isLoggedIn) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng đăng nhập để sử dụng tính năng so sánh')),
+          );
+          context.pop();
+          context.pushNamed('login');
+        }
+        return;
+      }
+
+      // Ensure products and variants are loaded
       final productState = ref.read(productListProvider);
       if (productState.products.isEmpty && !productState.isLoading) {
         ref.read(productListProvider.notifier).fetchProducts();
