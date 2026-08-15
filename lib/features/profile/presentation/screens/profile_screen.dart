@@ -31,7 +31,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
 
                     // ── Order Status Row ──
-                    _buildOrderSection(isDark),
+                    _buildOrderSection(context, authState, isDark),
 
                     const SizedBox(height: 20),
 
@@ -172,18 +172,7 @@ class ProfileScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           child: Column(
             children: [
-              // Top row — settings & cart icons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _headerIcon(Icons.settings_outlined, () => context.pushNamed('settings')),
-                  const SizedBox(width: 12),
-                  _headerIcon(Icons.shopping_cart_outlined, () {}),
-                  const SizedBox(width: 12),
-                  _headerIcon(Icons.chat_outlined, () => context.pushNamed('chatList')),
-                ],
-              ),
-              const SizedBox(height: 16),
+
 
               // User row
               if (authState.isLoggedIn)
@@ -371,69 +360,78 @@ class ProfileScreen extends ConsumerWidget {
   // ─────────────────────────────────────────
   // Order Status Section (Shopee-style)
   // ─────────────────────────────────────────
-  Widget _buildOrderSection(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-          width: 0.5,
+  Widget _buildOrderSection(BuildContext context, AuthState authState, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        if (authState.isLoggedIn) {
+          context.pushNamed('orders');
+        } else {
+          context.pushNamed('login');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            width: 0.5,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Đơn mua',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.darkOnSurface
-                      : AppColors.lightOnSurface,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Đơn mua',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.darkOnSurface
+                        : AppColors.lightOnSurface,
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Xem lịch sử mua hàng',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
+                Row(
+                  children: [
+                    Text(
+                      'Xem lịch sử mua hàng',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.darkOnSurfaceVariant
+                            : AppColors.lightOnSurfaceVariant,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
                       color: isDark
                           ? AppColors.darkOnSurfaceVariant
                           : AppColors.lightOnSurfaceVariant,
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: isDark
-                        ? AppColors.darkOnSurfaceVariant
-                        : AppColors.lightOnSurfaceVariant,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _orderStatus(Icons.inventory_2_outlined, 'Chờ xác nhận', isDark),
-              _orderStatus(
-                Icons.local_shipping_outlined,
-                'Chờ lấy hàng',
-                isDark,
-              ),
-              _orderStatus(Icons.delivery_dining_outlined, 'Đang giao', isDark),
-              _orderStatus(Icons.star_border_rounded, 'Đánh giá', isDark),
-            ],
-          ),
-        ],
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _orderStatus(Icons.inventory_2_outlined, 'Chờ xác nhận', isDark),
+                _orderStatus(
+                  Icons.local_shipping_outlined,
+                  'Chờ lấy hàng',
+                  isDark,
+                ),
+                _orderStatus(Icons.delivery_dining_outlined, 'Đang giao', isDark),
+                _orderStatus(Icons.star_border_rounded, 'Đánh giá', isDark),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
