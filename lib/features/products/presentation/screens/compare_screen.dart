@@ -587,9 +587,9 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
     if (_product1 == null || _product2 == null) return;
 
     final prompt =
-        'So sánh chi tiết 2 sản phẩm sau và đưa ra lời khuyên nên mua sản phẩm nào:\n'
-        '1. ${_product1!.name} (${_product1!.brand}) - ${_product1!.categoryName}\n'
-        '2. ${_product2!.name} (${_product2!.brand}) - ${_product2!.categoryName}';
+        'Tôi cần so sánh "${_product1!.name}" (productId: ${_product1!.id}) '
+        'và "${_product2!.name}" (productId: ${_product2!.id}). '
+        'Hãy so sánh chi tiết và tư vấn nên chọn sản phẩm nào nhé.';
 
     context.pushNamed(
       'chat',
