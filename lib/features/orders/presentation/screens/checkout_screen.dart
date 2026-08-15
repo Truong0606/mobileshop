@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/core/utils/price_formatter.dart';
 import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
@@ -62,37 +60,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
 
       if (url != null && url.isNotEmpty) {
-        // Mở URL PayOS thanh toán
-        final uri = Uri.parse(url);
-        bool launched = false;
-        try {
-          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } catch (_) {
-          try {
-            launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-          } catch (_) {
-            try {
-              launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
-            } catch (_) {
-              launched = false;
-            }
-          }
-        }
-
-        if (launched) {
-          ref.read(cartProvider.notifier).fetchCart();
-          ref.read(orderProvider.notifier).refresh();
-          if (mounted) {
-            context.goNamed('orders');
-          }
-        } else {
-          if (mounted) {
-            AppNotification.show(
-              context,
-              message: 'Không thể mở trình duyệt thanh toán. Vui lòng thử lại.',
-              type: NotificationType.error,
-            );
-          }
+        // Mở màn hình In-App WebView để thanh toán PayOS trực tiếp trong app
+        if (mounted) {
+          context.pushNamed('paymentWebview', extra: url);
         }
       } else {
         // Tạo đơn hàng thành công trực tiếp

@@ -15,6 +15,7 @@ import 'package:smart_shopping_chatbot/features/auth/presentation/screens/regist
 import 'package:smart_shopping_chatbot/features/auth/presentation/screens/admin_redirect_screen.dart';
 import 'package:smart_shopping_chatbot/features/cart/presentation/screens/cart_screen.dart';
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/checkout_screen.dart';
+import 'package:smart_shopping_chatbot/features/orders/presentation/screens/payment_webview_screen.dart';
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_history_screen.dart';
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_detail_screen.dart';
 import 'package:smart_shopping_chatbot/features/products/presentation/screens/wishlist_screen.dart';
@@ -173,6 +174,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'checkout',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CheckoutScreen(),
+      ),
+
+      GoRoute(
+        path: '/payment-webview',
+        name: 'paymentWebview',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final paymentUrl = state.extra as String? ?? '';
+          return PaymentWebViewScreen(paymentUrl: paymentUrl);
+        },
       ),
 
       GoRoute(

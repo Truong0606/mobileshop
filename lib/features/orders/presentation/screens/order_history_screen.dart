@@ -33,6 +33,16 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen> {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.goNamed('profile');
+              }
+            },
+          ),
           title: Text(
             'Lịch sử đơn hàng',
             style: GoogleFonts.inter(fontWeight: FontWeight.w600),
