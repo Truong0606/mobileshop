@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_shopping_chatbot/features/orders/data/models/order_model.dart';
 import 'package:smart_shopping_chatbot/features/orders/data/repositories/order_repository.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 
 final orderRepositoryProvider = Provider<OrderRepository>((ref) {
   return OrderRepository();
@@ -40,12 +41,19 @@ class OrderState {
 
 class OrderNotifier extends StateNotifier<OrderState> {
   final OrderRepository _repository;
+  final Ref _ref;
 
-  OrderNotifier(this._repository) : super(OrderState()) {
-    fetchOrders(refresh: true);
+  OrderNotifier(this._repository, this._ref) : super(OrderState()) {
+    final authState = _ref.read(authProvider);
+    if (authState.isLoggedIn) {
+      fetchOrders(refresh: true);
+    }
   }
 
   Future<void> fetchOrders({bool refresh = false}) async {
+    final authState = _ref.read(authProvider);
+    if (!authState.isLoggedIn) return;
+
     if (state.isLoading) return;
     if (!refresh && !state.hasMore) return;
 
@@ -64,7 +72,7 @@ class OrderNotifier extends StateNotifier<OrderState> {
       state = state.copyWith(
         isLoading: false,
         orders: refresh ? newOrders : [...state.orders, ...newOrders],
-        hasMore: newOrders.length == 20, // assuming pageSize is 20
+        hasMore: newOrders.length == 20,
         currentPage: page,
       );
     } catch (e) {
@@ -79,5 +87,10 @@ class OrderNotifier extends StateNotifier<OrderState> {
 
 final orderProvider = StateNotifierProvider<OrderNotifier, OrderState>((ref) {
   final repository = ref.watch(orderRepositoryProvider);
-  return OrderNotifier(repository);
+  final authState = ref.watch(authProvider);
+  final notifier = OrderNotifier(repository, ref);
+  if (authState.isLoggedIn) {
+    notifier.refresh();
+  }
+  return notifier;
 });

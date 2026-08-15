@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_shopping_chatbot/features/cart/data/models/cart_item_model.dart';
 import 'package:smart_shopping_chatbot/features/cart/data/repositories/cart_repository.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
 
 class CartProvider with ChangeNotifier {
   final CartRepository _cartRepository;
@@ -104,5 +105,10 @@ class CartProvider with ChangeNotifier {
 }
 
 final cartProvider = ChangeNotifierProvider<CartProvider>((ref) {
-  return CartProvider();
+  final authState = ref.watch(authProvider);
+  final provider = CartProvider();
+  if (authState.isLoggedIn) {
+    provider.fetchCart();
+  }
+  return provider;
 });
