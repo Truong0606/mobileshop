@@ -18,9 +18,8 @@ class FeedbackRepository {
       queryParameters: {'pageIndex': pageIndex, 'pageSize': pageSize},
     );
 
-    final data = response.data['data'];
     return PaginatedResponse.fromJson(
-      data,
+      response.data,
       (json) => FeedbackModel.fromJson(json),
     );
   }

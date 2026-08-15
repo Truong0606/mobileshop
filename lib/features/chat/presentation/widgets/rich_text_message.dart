@@ -7,7 +7,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
+import 'package:smart_shopping_chatbot/features/products/data/repositories/product_repository.dart';
+import 'package:smart_shopping_chatbot/shared/providers/auth_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
+import 'package:smart_shopping_chatbot/shared/widgets/app_notification.dart';
 
 class RichTextMessage extends ConsumerWidget {
   final String text;
@@ -20,6 +24,75 @@ class RichTextMessage extends ConsumerWidget {
     required this.isDark,
     required this.isUser,
   });
+
+  String? _addToCartSkuFromUrl(String url) {
+    final match = RegExp(
+      r'(?:^|#)/?add-to-cart/([^/?#]+)$',
+      caseSensitive: false,
+    ).firstMatch(url);
+    if (match == null) return null;
+
+    try {
+      return Uri.decodeComponent(match.group(1)!);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Future<bool> _handleLinkTap(
+    BuildContext context,
+    WidgetRef ref,
+    String url,
+  ) async {
+    final sku = _addToCartSkuFromUrl(url);
+    if (sku == null) return false;
+
+    if (!ref.read(authProvider).isLoggedIn) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng đăng nhập để thêm sản phẩm vào giỏ.'),
+          ),
+        );
+        context.pushNamed('login');
+      }
+      return true;
+    }
+
+    try {
+      final variant = await ProductRepository().findVariantBySku(sku);
+      if (!context.mounted) return true;
+
+      if (variant == null) {
+        _showMessage(context, 'Không tìm thấy sản phẩm có mã $sku.', isError: true);
+      } else if (!variant.isActive || !variant.inStock) {
+        _showMessage(context, '${variant.productName} hiện đã hết hàng.', isError: true);
+      } else {
+        await ref.read(cartProvider).addToCart(variant.id, 1);
+        if (context.mounted) {
+          _showMessage(context, 'Đã thêm ${variant.productName} vào giỏ hàng.');
+        }
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(
+          context,
+          'Không thể thêm sản phẩm vào giỏ. Vui lòng thử lại.',
+          isError: true,
+        );
+      }
+    }
+
+    return true;
+  }
+
+  void _showMessage(BuildContext context, String message, {bool isError = false}) {
+    AppNotification.show(
+      context,
+      message: message,
+      type: isError ? NotificationType.error : NotificationType.success,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,37 +110,33 @@ class RichTextMessage extends ConsumerWidget {
 
     // 3. Sử dụng HtmlWidget để render HTML
     return HtmlWidget(
-      // Bọc thêm thẻ div với style cơ bản nếu cần, 
+      // Bọc thêm thẻ div với style cơ bản nếu cần,
       // nhưng HtmlWidget đã hỗ trợ textStyle.
       htmlData,
-      textStyle: GoogleFonts.inter(
-        fontSize: 14,
-        height: 1.4,
-        color: textColor,
-      ),
+      textStyle: GoogleFonts.inter(fontSize: 14, height: 1.4, color: textColor),
       // Cấu hình custom style cho các thẻ HTML đặc biệt
       customStylesBuilder: (element) {
         if (element.localName == 'a') {
-          return {'color': isDark ? '#64B5F6' : '#1976D2', 'text-decoration': 'none'};
+          return {
+            'color': isDark ? '#64B5F6' : '#1976D2',
+            'text-decoration': 'none',
+          };
         }
         if (element.localName == 'th') {
           return {
             'background-color': isDark ? '#333333' : '#E0E0E0',
             'padding': '8px',
-            'border': '1px solid ${isDark ? '#444' : '#ccc'}'
+            'border': '1px solid ${isDark ? '#444' : '#ccc'}',
           };
         }
         if (element.localName == 'td') {
           return {
             'padding': '8px',
-            'border': '1px solid ${isDark ? '#444' : '#ccc'}'
+            'border': '1px solid ${isDark ? '#444' : '#ccc'}',
           };
         }
         if (element.localName == 'table') {
-          return {
-            'border-collapse': 'collapse',
-            'width': '100%',
-          };
+          return {'border-collapse': 'collapse', 'width': '100%'};
         }
         if (element.localName == 'code') {
           return {
@@ -88,14 +157,14 @@ class RichTextMessage extends ConsumerWidget {
         return null;
       },
       // Cấu hình hiển thị ảnh, video nếu có (tuỳ chọn)
-      onErrorBuilder: (context, element, error) => 
-        Text('$element error: $error'),
-      onLoadingBuilder: (context, element, loadingProgress) =>
-        const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+      onErrorBuilder: (context, element, error) =>
+          Text('$element error: $error'),
+      onLoadingBuilder: (context, element, loadingProgress) => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
       // Giới hạn chiều rộng ảnh hoặc custom widget nếu cần
+      onTapUrl: (url) => _handleLinkTap(context, ref, url),
       customWidgetBuilder: (element) {
         if (element.localName == 'img') {
           final src = element.attributes['src'] ?? '';
@@ -107,25 +176,36 @@ class RichTextMessage extends ConsumerWidget {
                 if (alt.isNotEmpty) {
                   final variants = ref.read(variantListProvider).variants;
                   final searchLower = alt.toLowerCase();
-                  
+
                   // 1. Try to find the exact variant by Image URL
-                  VariantModel? match = variants.where((v) => v.imageUrls.contains(src)).firstOrNull;
+                  VariantModel? match = variants
+                      .where((v) => v.imageUrls.contains(src))
+                      .firstOrNull;
 
                   // 2. Fallback to exact variant name
                   if (match == null && alt.isNotEmpty) {
-                    match = variants.where((v) => v.variantName.toLowerCase() == searchLower).firstOrNull;
+                    match = variants
+                        .where(
+                          (v) => v.variantName.toLowerCase() == searchLower,
+                        )
+                        .firstOrNull;
                   }
 
                   // 3. Fallback to exact product name
                   if (match == null && alt.isNotEmpty) {
-                    match = variants.where((v) => v.productName.toLowerCase() == searchLower).firstOrNull;
+                    match = variants
+                        .where(
+                          (v) => v.productName.toLowerCase() == searchLower,
+                        )
+                        .firstOrNull;
                   }
 
                   // 4. Fallback to partial name match
                   if (match == null && alt.isNotEmpty) {
                     match = variants.where((v) {
                       final nameLower = v.productName.toLowerCase();
-                      return nameLower.contains(searchLower) || searchLower.contains(nameLower);
+                      return nameLower.contains(searchLower) ||
+                          searchLower.contains(nameLower);
                     }).firstOrNull;
                   }
 
@@ -137,7 +217,9 @@ class RichTextMessage extends ConsumerWidget {
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Không tìm thấy thông tin sản phẩm.')),
+                      const SnackBar(
+                        content: Text('Không tìm thấy thông tin sản phẩm.'),
+                      ),
                     );
                   }
                 }
@@ -148,9 +230,12 @@ class RichTextMessage extends ConsumerWidget {
                   imageUrl: src,
                   placeholder: (context, url) => const SizedBox(
                     height: 150,
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+                  errorWidget: (context, url, error) =>
+                      const Icon(Icons.broken_image),
                   fit: BoxFit.cover,
                 ),
               ),

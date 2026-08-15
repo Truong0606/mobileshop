@@ -8,6 +8,7 @@ import 'package:smart_shopping_chatbot/core/theme/app_colors.dart';
 import 'package:smart_shopping_chatbot/features/products/data/models/variant_model.dart';
 import 'package:smart_shopping_chatbot/shared/providers/product_provider.dart';
 import 'package:smart_shopping_chatbot/shared/providers/wishlist_provider.dart';
+import 'package:smart_shopping_chatbot/shared/providers/cart_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -172,17 +173,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.darkSurfaceContainer
-                  : AppColors.lightSurfaceVariant,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, size: 22),
-              onPressed: () {},
-            ),
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurfaceContainer
+                      : AppColors.lightSurfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final cartState = ref.watch(cartProvider);
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.shopping_cart_outlined, size: 22),
+                          onPressed: () => context.pushNamed('cart'),
+                        ),
+                        if (cartState.items.isNotEmpty)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '${cartState.totalItems}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  }
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurfaceContainer
+                      : AppColors.lightSurfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_outlined, size: 22),
+                  onPressed: () {},
+                ),
+              ),
+            ],
           ),
         ],
       ),

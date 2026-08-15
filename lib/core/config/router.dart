@@ -16,6 +16,7 @@ import 'package:smart_shopping_chatbot/features/auth/presentation/screens/admin_
 import 'package:smart_shopping_chatbot/features/cart/presentation/screens/cart_screen.dart';
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/checkout_screen.dart';
 import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_history_screen.dart';
+import 'package:smart_shopping_chatbot/features/orders/presentation/screens/order_detail_screen.dart';
 import 'package:smart_shopping_chatbot/features/products/presentation/screens/wishlist_screen.dart';
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:smart_shopping_chatbot/features/profile/presentation/screens/address_list_screen.dart';
@@ -178,6 +179,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'orders',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const OrderHistoryScreen(),
+      ),
+
+      GoRoute(
+        path: '/orders/:id',
+        name: 'order_detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final orderIdStr = state.pathParameters['id']!;
+          return OrderDetailScreen(orderIdStr: orderIdStr);
+        },
       ),
 
       GoRoute(

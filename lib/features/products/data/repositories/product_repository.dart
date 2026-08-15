@@ -13,16 +13,16 @@ class ProductRepository {
     : _apiClient = apiClient ?? ApiClient.instance;
 
   // ───────── Categories ─────────
-  
+
   /// Fetch all categories.
   Future<List<CategoryModel>> getCategories() async {
     final response = await _apiClient.get<Map<String, dynamic>>('/categories');
-    
+
     final paginated = PaginatedResponse.fromJson(
       response.data!,
       (json) => CategoryModel.fromJson(json),
     );
-    
+
     return paginated.items;
   }
 
@@ -90,6 +90,29 @@ class ProductRepository {
         : data;
 
     return VariantModel.fromJson(variantJson);
+  }
+
+  /// Resolves the SKU emitted in an AI add-to-cart link to a variant.
+  ///
+  /// The public API is paginated and has no lookup-by-SKU endpoint, so search
+  /// until the whole catalogue has been covered.
+  Future<VariantModel?> findVariantBySku(String sku) async {
+    final normalizedSku = sku.trim().toLowerCase();
+    if (normalizedSku.isEmpty) return null;
+
+    const pageSize = 100;
+    var pageIndex = 1;
+    while (true) {
+      final page = await getVariants(pageIndex: pageIndex, pageSize: pageSize);
+      for (final variant in page.items) {
+        if (variant.sku.trim().toLowerCase() == normalizedSku) {
+          return variant;
+        }
+      }
+
+      if (!page.hasMore || page.items.isEmpty) return null;
+      pageIndex += 1;
+    }
   }
 
   // ───────── Images ─────────
