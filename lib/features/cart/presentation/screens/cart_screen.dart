@@ -123,6 +123,54 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                                 color: Colors.grey,
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: item.isFromChat
+                                    ? Colors.purple.withValues(alpha: 0.1)
+                                    : (isDark
+                                        ? Colors.white10
+                                        : Colors.grey.shade100),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: item.isFromChat
+                                      ? Colors.purple.withValues(alpha: 0.3)
+                                      : Colors.grey.shade300,
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    item.isFromChat
+                                        ? Icons.auto_awesome
+                                        : Icons.shopping_bag_outlined,
+                                    size: 11,
+                                    color: item.isFromChat
+                                        ? Colors.purple.shade700
+                                        : Colors.grey.shade700,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    item.isFromChat
+                                        ? 'Thêm từ Chat AI'
+                                        : 'Thêm từ Sản phẩm',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: item.isFromChat
+                                        ? Colors.purple.shade700
+                                        : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               PriceFormatter.formatVNDDouble(item.price),

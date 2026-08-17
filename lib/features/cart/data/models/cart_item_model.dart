@@ -7,6 +7,12 @@ class CartItemModel {
   final int quantity;
   final String? conversationId;
   final String? source;
+  final String? addToCartSource;
+
+  bool get isFromChat =>
+      (source?.toLowerCase() == 'chat') ||
+      (addToCartSource?.toLowerCase() == 'chat') ||
+      (conversationId != null && conversationId!.isNotEmpty);
 
   CartItemModel({
     required this.id,
@@ -17,6 +23,7 @@ class CartItemModel {
     required this.quantity,
     this.conversationId,
     this.source,
+    this.addToCartSource,
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +36,7 @@ class CartItemModel {
       quantity: json['quantity'] as int? ?? 0,
       conversationId: json['conversationId'] as String?,
       source: json['source'] as String?,
+      addToCartSource: json['addToCartSource'] as String?,
     );
   }
 
