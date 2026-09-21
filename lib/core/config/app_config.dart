@@ -99,7 +99,7 @@ class AppConfig {
       case Environment.dev:
       case Environment.staging:
       case Environment.prod:
-        return 'https://shoppe-fake-427087851138.asia-southeast1.run.app/api/v1';
+        return 'https://shoppefake-545163055657.asia-southeast1.run.app/api/v1';
     }
   }
 
@@ -108,7 +108,7 @@ class AppConfig {
       case Environment.dev:
       case Environment.staging:
       case Environment.prod:
-        return 'wss://shoppe-fake-427087851138.asia-southeast1.run.app/ws';
+        return 'wss://shoppefake-545163055657.asia-southeast1.run.app/ws';
     }
   }
 
