@@ -58,15 +58,14 @@ class ProductListNotifier extends StateNotifier<ProductListState> {
   Future<void> fetchProducts({int pageSize = 100}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final response = await _repository.getProducts(
-        pageIndex: 1,
+      final allProducts = await _repository.getAllProducts(
         pageSize: pageSize,
       );
       state = ProductListState(
-        products: response.items,
-        currentPage: response.pageIndex,
-        totalPages: response.totalPages,
-        hasMore: response.hasMore,
+        products: allProducts,
+        currentPage: 1,
+        totalPages: 1,
+        hasMore: false,
       );
     } on ApiException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
@@ -234,16 +233,15 @@ class VariantListNotifier extends StateNotifier<VariantListState> {
     _currentOrderBy = orderBy;
     state = state.copyWith(isLoading: true, clearError: true, orderBy: orderBy, clearOrderBy: orderBy == null);
     try {
-      final response = await _repository.getVariants(
-        pageIndex: 1,
+      final allVariants = await _repository.getAllVariants(
         pageSize: pageSize,
         orderBy: orderBy,
       );
       state = VariantListState(
-        variants: response.items,
-        currentPage: response.pageIndex,
-        totalPages: response.totalPages,
-        hasMore: response.hasMore,
+        variants: allVariants,
+        currentPage: 1,
+        totalPages: 1,
+        hasMore: false,
         orderBy: orderBy,
       );
     } on ApiException catch (e) {

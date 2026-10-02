@@ -14,16 +14,29 @@ class ProductRepository {
 
   // ───────── Categories ─────────
 
-  /// Fetch all categories.
-  Future<List<CategoryModel>> getCategories() async {
-    final response = await _apiClient.get<Map<String, dynamic>>('/categories');
+  /// Fetch all categories across all pages.
+  Future<List<CategoryModel>> getCategories({int pageSize = 100}) async {
+    final List<CategoryModel> allCategories = [];
+    int currentPage = 1;
+    bool hasMore = true;
 
-    final paginated = PaginatedResponse.fromJson(
-      response.data!,
-      (json) => CategoryModel.fromJson(json),
-    );
+    while (hasMore) {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/categories',
+        queryParameters: {'pageIndex': currentPage, 'pageSize': pageSize},
+      );
 
-    return paginated.items;
+      final paginated = PaginatedResponse.fromJson(
+        response.data!,
+        (json) => CategoryModel.fromJson(json),
+      );
+
+      allCategories.addAll(paginated.items);
+      hasMore = paginated.hasMore;
+      currentPage++;
+    }
+
+    return allCategories;
   }
 
   // ───────── Products ─────────
@@ -122,6 +135,48 @@ class ProductRepository {
       if (!page.hasMore || page.items.isEmpty) return null;
       pageIndex += 1;
     }
+  }
+
+  /// Fetch ALL variants across all pages.
+  Future<List<VariantModel>> getAllVariants({
+    int pageSize = 100,
+    String? orderBy,
+  }) async {
+    final List<VariantModel> allVariants = [];
+    int currentPage = 1;
+    bool hasMore = true;
+
+    while (hasMore) {
+      final response = await getVariants(
+        pageIndex: currentPage,
+        pageSize: pageSize,
+        orderBy: orderBy,
+      );
+      allVariants.addAll(response.items);
+      hasMore = response.hasMore;
+      currentPage++;
+    }
+
+    return allVariants;
+  }
+
+  /// Fetch ALL products across all pages.
+  Future<List<ProductModel>> getAllProducts({int pageSize = 100}) async {
+    final List<ProductModel> allProducts = [];
+    int currentPage = 1;
+    bool hasMore = true;
+
+    while (hasMore) {
+      final response = await getProducts(
+        pageIndex: currentPage,
+        pageSize: pageSize,
+      );
+      allProducts.addAll(response.items);
+      hasMore = response.hasMore;
+      currentPage++;
+    }
+
+    return allProducts;
   }
 
   // ───────── Images ─────────

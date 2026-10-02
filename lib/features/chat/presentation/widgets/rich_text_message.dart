@@ -104,6 +104,141 @@ class RichTextMessage extends ConsumerWidget {
     );
   }
 
+  String _extractImageIdentifier(String url) {
+    if (url.isEmpty) return '';
+    try {
+      final clean = url.split('?').first.split('#').first;
+      final segments = clean.split('/').where((s) => s.isNotEmpty).toList();
+      final last = segments.isNotEmpty ? segments.last : '';
+      return last.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '').trim().toLowerCase();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _cleanText(String str) {
+    return str
+        .toLowerCase()
+        .replaceAll(RegExp(r'[.,\/#!$%\^&\*;:{}=\-_`~()—+\[\]]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  Future<void> _handleImageTap(
+    BuildContext context,
+    WidgetRef ref,
+    String src,
+    String alt,
+  ) async {
+    try {
+      // 1. Lấy danh sách variants đã có trong provider hoặc fetch toàn bộ từ repository
+      List<VariantModel> variants = ref.read(variantListProvider).variants;
+      if (variants.isEmpty || variants.length < 50) {
+        variants = await ProductRepository().getAllVariants(pageSize: 100);
+      }
+
+      VariantModel? match;
+      int? targetProductId;
+
+      // Ưu tiên 1: Trích xuất SKU từ text tin nhắn nếu có (liên kết add-to-cart)
+      final skuInText = RegExp(
+        r'(?:^|#|/)\/?add-to-cart/([^)\s"'"'"'#]+)',
+        caseSensitive: false,
+      ).firstMatch(text);
+      if (skuInText != null) {
+        final extractedSku = Uri.decodeComponent(skuInText.group(1)!).trim().toLowerCase();
+        match = variants.where((v) => v.sku.trim().toLowerCase() == extractedSku).firstOrNull;
+        match ??= await ProductRepository().findVariantBySku(extractedSku);
+        if (match != null) {
+          targetProductId = match.productId;
+        }
+      }
+
+      // Ưu tiên 2: Khớp theo mã định danh ảnh (Cloudinary public ID / tên file ảnh)
+      if (match == null && src.isNotEmpty) {
+        final srcId = _extractImageIdentifier(src);
+        if (srcId.length >= 4) {
+          match = variants.where((v) {
+            return v.imageUrls.any((img) {
+              final imgId = _extractImageIdentifier(img);
+              return imgId == srcId || img.contains(src) || src.contains(img);
+            });
+          }).firstOrNull;
+          if (match != null) {
+            targetProductId = match.productId;
+          }
+        }
+      }
+
+      // Ưu tiên 3: Khớp theo URL ảnh gốc
+      if (match == null && src.isNotEmpty) {
+        final cleanSrc = src.split('?').first.toLowerCase();
+        match = variants.where((v) {
+          return v.imageUrls.any((img) => img.split('?').first.toLowerCase() == cleanSrc);
+        }).firstOrNull;
+        if (match != null) {
+          targetProductId = match.productId;
+        }
+      }
+
+      // Ưu tiên 4: Khớp theo alt text hoặc tên sản phẩm
+      if (match == null && alt.isNotEmpty) {
+        final cleanAlt = _cleanText(alt);
+        if (cleanAlt.length >= 3) {
+          // 4a. Khớp chính xác tên biến thể
+          match = variants.where((v) => _cleanText(v.variantName) == cleanAlt).firstOrNull;
+
+          // 4b. Khớp chính xác tên sản phẩm
+          match ??= variants.where((v) => _cleanText(v.productName) == cleanAlt).firstOrNull;
+
+          // 4c. Khớp chuỗi con nếu alt đủ dài (từ 5 ký tự trở lên)
+          if (match == null && cleanAlt.length >= 5) {
+            match = variants.where((v) {
+              final pName = _cleanText(v.productName);
+              return pName.length >= 5 && (pName.contains(cleanAlt) || cleanAlt.contains(pName));
+            }).firstOrNull;
+          }
+          if (match != null) {
+            targetProductId = match.productId;
+          }
+        }
+      }
+
+      // Ưu tiên 5: Quét tên sản phẩm xuất hiện trong text tin nhắn
+      if (match == null && targetProductId == null) {
+        final cleanMsg = _cleanText(text);
+        final candidates = variants.where((v) {
+          final pName = _cleanText(v.productName);
+          return pName.length >= 6 && cleanMsg.contains(pName);
+        }).toList();
+
+        if (candidates.isNotEmpty) {
+          candidates.sort((a, b) => b.productName.length.compareTo(a.productName.length));
+          match = candidates.first;
+          targetProductId = match.productId;
+        }
+      }
+
+      if (!context.mounted) return;
+
+      if (targetProductId != null) {
+        await AiTrackingStorage.saveConversationId(conversationId);
+        if (!context.mounted) return;
+        context.pushNamed(
+          'productDetail',
+          pathParameters: {'id': targetProductId.toString()},
+          extra: match,
+        );
+      } else {
+        _showMessage(context, 'Không tìm thấy thông tin sản phẩm.', isError: true);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'Không thể mở chi tiết sản phẩm.', isError: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 1. Chuyển đổi Markdown -> HTML
@@ -182,59 +317,7 @@ class RichTextMessage extends ConsumerWidget {
 
           if (src.isNotEmpty) {
             return GestureDetector(
-              onTap: () {
-                if (alt.isNotEmpty) {
-                  final variants = ref.read(variantListProvider).variants;
-                  final searchLower = alt.toLowerCase();
-
-                  // 1. Try to find the exact variant by Image URL
-                  VariantModel? match = variants
-                      .where((v) => v.imageUrls.contains(src))
-                      .firstOrNull;
-
-                  // 2. Fallback to exact variant name
-                  if (match == null && alt.isNotEmpty) {
-                    match = variants
-                        .where(
-                          (v) => v.variantName.toLowerCase() == searchLower,
-                        )
-                        .firstOrNull;
-                  }
-
-                  // 3. Fallback to exact product name
-                  if (match == null && alt.isNotEmpty) {
-                    match = variants
-                        .where(
-                          (v) => v.productName.toLowerCase() == searchLower,
-                        )
-                        .firstOrNull;
-                  }
-
-                  // 4. Fallback to partial name match
-                  if (match == null && alt.isNotEmpty) {
-                    match = variants.where((v) {
-                      final nameLower = v.productName.toLowerCase();
-                      return nameLower.contains(searchLower) ||
-                          searchLower.contains(nameLower);
-                    }).firstOrNull;
-                  }
-
-                  if (match != null) {
-                    AiTrackingStorage.saveConversationId(conversationId);
-                    context.pushNamed(
-                      'productDetail',
-                      pathParameters: {'id': match.productId.toString()},
-                      extra: match,
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Không tìm thấy thông tin sản phẩm.'),
-                      ),
-                    );
-                  }
-                }
-              },
+              onTap: () => _handleImageTap(context, ref, src, alt),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
