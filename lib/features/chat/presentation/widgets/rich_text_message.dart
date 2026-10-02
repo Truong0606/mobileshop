@@ -124,6 +124,67 @@ class RichTextMessage extends ConsumerWidget {
         .trim();
   }
 
+  String? _extractSkuNearImage(String messageText, String src, String alt) {
+    if (messageText.isEmpty) return null;
+
+    int imgIndex = -1;
+    if (src.isNotEmpty) {
+      final cleanUrl = src.split('?').first;
+      imgIndex = messageText.indexOf(cleanUrl);
+      if (imgIndex == -1) {
+        final segments = cleanUrl.split('/').where((s) => s.isNotEmpty).toList();
+        final fileName = segments.isNotEmpty ? segments.last : null;
+        if (fileName != null && fileName.length >= 4) {
+          imgIndex = messageText.indexOf(fileName);
+        }
+      }
+      if (imgIndex == -1) {
+        final id = _extractImageIdentifier(src);
+        if (id.length >= 4) {
+          imgIndex = messageText.indexOf(id);
+        }
+      }
+    }
+
+    if (imgIndex == -1 && alt.trim().length >= 3) {
+      imgIndex = messageText.indexOf(alt.trim());
+    }
+
+    if (imgIndex != -1) {
+      final textAfter = messageText.substring(imgIndex);
+      final nextImgMatch = RegExp(r'!\[|<img', caseSensitive: false)
+          .firstMatch(textAfter.length > 1 ? textAfter.substring(1) : '');
+      final localSection = nextImgMatch != null
+          ? textAfter.substring(0, nextImgMatch.start + 1)
+          : (textAfter.length > 1000 ? textAfter.substring(0, 1000) : textAfter);
+
+      final skuMatch = RegExp(
+        r'(?:^|#|/)\/?add-to-cart/([^)\s"'"'"'#]+)',
+        caseSensitive: false,
+      ).firstMatch(localSection);
+
+      if (skuMatch != null) {
+        try {
+          return Uri.decodeComponent(skuMatch.group(1)!).trim().toLowerCase();
+        } catch (_) {}
+      }
+    }
+
+    // Nếu tin nhắn chỉ có duy nhất 1 link add-to-cart
+    final allMatches = RegExp(
+      r'(?:^|#|/)\/?add-to-cart/([^)\s"'"'"'#]+)',
+      caseSensitive: false,
+    ).allMatches(messageText).toList();
+
+    if (allMatches.length == 1) {
+      try {
+        return Uri.decodeComponent(allMatches.first.group(1)!).trim().toLowerCase();
+      } catch (_) {}
+    }
+
+    return null;
+  }
+
   Future<void> _handleImageTap(
     BuildContext context,
     WidgetRef ref,
@@ -140,22 +201,8 @@ class RichTextMessage extends ConsumerWidget {
       VariantModel? match;
       int? targetProductId;
 
-      // Ưu tiên 1: Trích xuất SKU từ text tin nhắn nếu có (liên kết add-to-cart)
-      final skuInText = RegExp(
-        r'(?:^|#|/)\/?add-to-cart/([^)\s"'"'"'#]+)',
-        caseSensitive: false,
-      ).firstMatch(text);
-      if (skuInText != null) {
-        final extractedSku = Uri.decodeComponent(skuInText.group(1)!).trim().toLowerCase();
-        match = variants.where((v) => v.sku.trim().toLowerCase() == extractedSku).firstOrNull;
-        match ??= await ProductRepository().findVariantBySku(extractedSku);
-        if (match != null) {
-          targetProductId = match.productId;
-        }
-      }
-
-      // Ưu tiên 2: Khớp theo mã định danh ảnh (Cloudinary public ID / tên file ảnh)
-      if (match == null && src.isNotEmpty) {
+      // Ưu tiên 1 (Chính xác nhất): Khớp trực tiếp theo ảnh được bấm (Cloudinary public ID / Tên file ảnh / URL ảnh)
+      if (src.isNotEmpty) {
         final srcId = _extractImageIdentifier(src);
         if (srcId.length >= 4) {
           match = variants.where((v) {
@@ -168,30 +215,41 @@ class RichTextMessage extends ConsumerWidget {
             targetProductId = match.productId;
           }
         }
-      }
 
-      // Ưu tiên 3: Khớp theo URL ảnh gốc
-      if (match == null && src.isNotEmpty) {
-        final cleanSrc = src.split('?').first.toLowerCase();
-        match = variants.where((v) {
-          return v.imageUrls.any((img) => img.split('?').first.toLowerCase() == cleanSrc);
-        }).firstOrNull;
-        if (match != null) {
-          targetProductId = match.productId;
+        if (match == null) {
+          final cleanSrc = src.split('?').first.toLowerCase();
+          match = variants.where((v) {
+            return v.imageUrls.any((img) => img.split('?').first.toLowerCase() == cleanSrc);
+          }).firstOrNull;
+          if (match != null) {
+            targetProductId = match.productId;
+          }
         }
       }
 
-      // Ưu tiên 4: Khớp theo alt text hoặc tên sản phẩm
+      // Ưu tiên 2: Trích xuất SKU từ link "thêm vào giỏ" nằm trong khối của CHÍNH ẢNH NÀY
+      if (match == null) {
+        final targetSku = _extractSkuNearImage(text, src, alt);
+        if (targetSku != null && targetSku.isNotEmpty) {
+          match = variants.where((v) => v.sku.trim().toLowerCase() == targetSku).firstOrNull;
+          match ??= await ProductRepository().findVariantBySku(targetSku);
+          if (match != null) {
+            targetProductId = match.productId;
+          }
+        }
+      }
+
+      // Ưu tiên 3: Khớp theo alt text hoặc tên sản phẩm
       if (match == null && alt.isNotEmpty) {
         final cleanAlt = _cleanText(alt);
         if (cleanAlt.length >= 3) {
-          // 4a. Khớp chính xác tên biến thể
+          // 3a. Khớp chính xác tên biến thể
           match = variants.where((v) => _cleanText(v.variantName) == cleanAlt).firstOrNull;
 
-          // 4b. Khớp chính xác tên sản phẩm
+          // 3b. Khớp chính xác tên sản phẩm
           match ??= variants.where((v) => _cleanText(v.productName) == cleanAlt).firstOrNull;
 
-          // 4c. Khớp chuỗi con nếu alt đủ dài (từ 5 ký tự trở lên)
+          // 3c. Khớp chuỗi con nếu alt đủ dài (từ 5 ký tự trở lên)
           if (match == null && cleanAlt.length >= 5) {
             match = variants.where((v) {
               final pName = _cleanText(v.productName);
@@ -204,9 +262,19 @@ class RichTextMessage extends ConsumerWidget {
         }
       }
 
-      // Ưu tiên 5: Quét tên sản phẩm xuất hiện trong text tin nhắn
+      // Ưu tiên 4: Quét tên sản phẩm trong khối văn bản cục bộ của ảnh này
       if (match == null && targetProductId == null) {
-        final cleanMsg = _cleanText(text);
+        String localText = text;
+        if (src.isNotEmpty) {
+          final clean = src.split('?').first;
+          final idx = text.indexOf(clean);
+          if (idx != -1) {
+            final after = text.substring(idx);
+            final nextImg = RegExp(r'!\[|<img', caseSensitive: false).firstMatch(after.length > 1 ? after.substring(1) : '');
+            localText = nextImg != null ? after.substring(0, nextImg.start + 1) : (after.length > 1000 ? after.substring(0, 1000) : after);
+          }
+        }
+        final cleanMsg = _cleanText(localText);
         final candidates = variants.where((v) {
           final pName = _cleanText(v.productName);
           return pName.length >= 6 && cleanMsg.contains(pName);
