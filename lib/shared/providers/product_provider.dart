@@ -426,12 +426,9 @@ class ProductDetailNotifier extends StateNotifier<ProductDetailState> {
     try {
       final product = await _productRepository.getProductById(productId);
 
-      // Fetch all variants (in a real app, you might filter by productId or backend would include them)
-      // Since our API currently paginates all variants, let's fetch all and filter locally for now.
-      final allVariantsResponse = await _productRepository.getVariants(
-        pageSize: 100,
-      );
-      final productVariants = allVariantsResponse.items
+      // Fetch all variants across all pages to ensure no variants are missed
+      final allVariants = await _productRepository.getAllVariants();
+      final productVariants = allVariants
           .where((v) => v.productId == productId)
           .toList();
 
